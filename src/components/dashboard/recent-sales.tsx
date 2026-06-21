@@ -1,4 +1,4 @@
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
 
 import {
@@ -41,7 +41,7 @@ export function RecentSales() {
                 {currency.format(sale.amount)}
               </p>
               <p className="text-xs text-muted-foreground">
-                {format(new Date(sale.date), "M월 d일", { locale: ko })}
+                {format(parseISO(sale.date), "M월 d일", { locale: ko })}
               </p>
             </div>
           </div>

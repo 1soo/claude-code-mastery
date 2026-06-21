@@ -2,8 +2,9 @@
 
 import { type ColumnDef } from "@tanstack/react-table";
 import { ArrowUpDown, MoreHorizontal } from "lucide-react";
-import { format } from "date-fns";
+import { format, parseISO } from "date-fns";
 import { ko } from "date-fns/locale";
+import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -67,7 +68,7 @@ export const userColumns: ColumnDef<User>[] = [
     accessorKey: "createdAt",
     header: "가입일",
     cell: ({ row }) =>
-      format(new Date(row.getValue("createdAt")), "yyyy.MM.dd", {
+      format(parseISO(row.getValue("createdAt") as string), "yyyy.MM.dd", {
         locale: ko,
       }),
   },
@@ -85,7 +86,14 @@ export const userColumns: ColumnDef<User>[] = [
           <DropdownMenuContent align="end">
             <DropdownMenuLabel>작업</DropdownMenuLabel>
             <DropdownMenuItem
-              onClick={() => navigator.clipboard.writeText(user.email)}
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(user.email);
+                  toast.success("이메일이 복사되었습니다");
+                } catch {
+                  toast.error("복사에 실패했습니다");
+                }
+              }}
             >
               이메일 복사
             </DropdownMenuItem>
