@@ -98,16 +98,16 @@
 
 - **목표**: 노션 API 응답을 앱 `Quote`/`QuoteItem` 타입으로 안전하게 변환하는 레이어를 완성한다.
 - **작업 목록**:
-  - [ ] [P0][M] **`normalizeQuote(page)` 구현** — `src/lib/notion.ts`. 노션 page 프로퍼티 → `Quote` 매핑. strict 모드 null 가드 필수: title/rich_text는 배열(빈 배열 가능, `plain_text` 추출 + `'제목 없음'`/`''` fallback), email/number/date/select는 미입력 시 `null`. select 값 → `QuoteStatus`(`발행→issued` 등) 매핑, 미선택 → `null`. (F004, 의존성: Phase 0)
-  - [ ] [P0][M] **견적 항목 파서 구현** — Phase 0에서 확정한 방식으로 `QuoteItem[]` 파싱.
+  - [x] [P0][M] **`normalizeQuote(page)` 구현** — `src/lib/notion.ts`. 노션 page 프로퍼티 → `Quote` 매핑. strict 모드 null 가드 필수: title/rich_text는 배열(빈 배열 가능, `plain_text` 추출 + `'제목 없음'`/`''` fallback), email/number/date/select는 미입력 시 `null`. select 값 → `QuoteStatus`(`발행→issued` 등) 매핑, 미선택 → `null`. (F004, 의존성: Phase 0)
+  - [x] [P0][M] **견적 항목 파서 구현** — Phase 0에서 확정한 방식으로 `QuoteItem[]` 파싱.
     - JSON 방식: 본문 `code` 블록 1회 조회 → `JSON.parse` → 스키마 가드.
     - 테이블 방식(택할 경우): page children → 테이블 children 2단계 조회, **헤더 텍스트 기반 동적 열 매핑**(인덱스 금지), `has_column_header` 첫 행 제외, 숫자 문자열(`"₩1,000"`) 콤마·통화기호 제거 + `NaN` 가드 파서. (의존성: 위 normalizeQuote)
-  - [ ] [P1][S] **금액 계산 유틸** — `amount = quantity × unitPrice` 검산/보정, 소계/세금/합계 표시용 포맷터(`Intl.NumberFormat` ko-KR, ₩). `src/lib/utils.ts` 또는 신규 `format.ts`. 직접 구현 대신 `Intl` 사용. (의존성: 없음 — 병렬 가능)
+  - [x] [P1][S] **금액 계산 유틸** — `amount = quantity × unitPrice` 검산/보정, 소계/세금/합계 표시용 포맷터(`Intl.NumberFormat` ko-KR, ₩). `src/lib/utils.ts` 또는 신규 `format.ts`. 직접 구현 대신 `Intl` 사용. (의존성: 없음 — 병렬 가능)
 - **테스트 & 검증** (구현 후 필수 수행):
-  - [ ] [P0][S] **`normalizeQuote` 단위 테스트** — 노션 page 응답 fixture JSON으로 검증. 케이스: (a) 모든 필드 정상, (b) title 빈 배열 → `'제목 없음'`, (c) email/number/date/select `null`, (d) status 미선택 → `null`, (e) 한글 `plain_text` 보존. 외부 API 호출 없이 fixture만 사용. (vitest)
-  - [ ] [P0][S] **항목 파서 단위 테스트** — 확정 방식별 케이스: JSON 방식은 정상/깨진 JSON/빈 본문, 테이블 방식은 헤더 매핑/빈 셀(`[]`)/숫자 문자열(`"₩1,000"` → `1000`)/`NaN` 가드/열 순서 변경 시나리오. (vitest)
-  - [ ] [P1][S] **금액 계산 유틸 단위 테스트** — `amount = quantity × unitPrice` 검산, ₩ 포맷터 출력, 0·음수·null 경계값. (vitest)
-  - [ ] **검증 게이트**: 위 단위 테스트 전부 통과해야 Phase 2 진행.
+  - [x] [P0][S] **`normalizeQuote` 단위 테스트** — 노션 page 응답 fixture JSON으로 검증. 케이스: (a) 모든 필드 정상, (b) title 빈 배열 → `'제목 없음'`, (c) email/number/date/select `null`, (d) status 미선택 → `null`, (e) 한글 `plain_text` 보존. 외부 API 호출 없이 fixture만 사용. (vitest)
+  - [x] [P0][S] **항목 파서 단위 테스트** — 확정 방식별 케이스: JSON 방식은 정상/깨진 JSON/빈 본문, 테이블 방식은 헤더 매핑/빈 셀(`[]`)/숫자 문자열(`"₩1,000"` → `1000`)/`NaN` 가드/열 순서 변경 시나리오. (vitest)
+  - [x] [P1][S] **금액 계산 유틸 단위 테스트** — `amount = quantity × unitPrice` 검산, ₩ 포맷터 출력, 0·음수·null 경계값. (vitest)
+  - [x] **검증 게이트**: 위 단위 테스트 전부 통과해야 Phase 2 진행.
 - **리스크 & 완화책**: 테이블 방식의 열 순서 변경 취약성 → 헤더 텍스트 매핑으로 방어 + 테스트로 회귀 방지. 숫자 파싱 실패 → `NaN` 가드 후 `0` fallback.
 - **DoD**: 한글 견적 1건이 `Quote`(항목 포함)로 깨짐 없이 변환됨 + 위 단위 테스트 전부 통과.
 

@@ -51,11 +51,9 @@ export async function getQuote(_id: string): Promise<Quote | null> {
   throw new Error("getQuote 미구현 — 노션 연동 후 구현 필요");
 }
 
-/**
- * 노션 page 응답을 앱 내부 Quote 타입으로 정규화한다.
- * strict 모드 주의: email/number/date/select는 미입력 시 null,
- * title/rich_text는 항상 배열(빈 배열 가능)이므로 null 가드 + fallback 처리한다.
- *
- * TODO(정규화 레이어): 노션 프로퍼티 → Quote 매핑 + null 가드 구현
- */
-// export function normalizeQuote(page: PageObjectResponse): Quote { ... }
+// 정규화 레이어는 server-only 의존이 없는 순수 함수로 src/lib/normalize.ts 에 분리하고
+// 여기서 re-export 한다. (단위 테스트는 @/lib/normalize 를 직접 import해 격리 테스트)
+//   - normalizeQuote(page, items): 노션 page → Quote 변환(NOTION_PROP 매핑 + null 가드)
+//   - parseQuoteItems(blocks): 본문 JSON 코드 블록 → QuoteItem[] (실패 시 [] fallback)
+// getQuote 구현 시 blocks.children.list 결과를 parseQuoteItems 로 넘겨 items 를 채운다.
+export { normalizeQuote, parseQuoteItems } from "@/lib/normalize";
