@@ -37,8 +37,8 @@
 |----|--------|------|--------------|------------|
 | **F001** | 견적서 목록 조회 | 노션 데이터베이스에서 견적서 목록을 가져와 카드/리스트 형태로 표시 | 운영자가 발행한 견적서 전체를 한눈에 파악하는 진입점 | 견적서 목록 페이지 |
 | **F002** | 견적서 상세 조회 | 노션 페이지 ID 기반으로 단일 견적서의 전체 필드(고객명·항목·금액 등)를 렌더링 | 서비스의 핵심 가치 — 클라이언트가 견적 내용을 웹에서 확인 | 견적서 상세 페이지 |
-| **F003** | PDF 다운로드 | 렌더링된 견적서 HTML을 PDF로 변환하여 파일로 다운로드 | 서비스의 두 번째 핵심 가치 — 클라이언트가 견적서를 오프라인 보관 | 견적서 상세 페이지 |
-| **F004** | 노션 API 연동 | `@notionhq/client` SDK를 통해 노션 데이터베이스·페이지 데이터를 서버사이드에서 fetch | 모든 데이터의 단일 소스 — 노션이 유일한 데이터 저장소 | 견적서 목록 페이지, 견적서 상세 페이지 |
+| **F003** | PDF 다운로드 | 렌더링된 견적서 화면을 PDF 파일로 다운로드 (MVP는 브라우저 인쇄 `window.print()` + `@media print` CSS 활용 — 화면 마크업/Tailwind 그대로 재사용) | 서비스의 두 번째 핵심 가치 — 클라이언트가 견적서를 오프라인 보관 | 견적서 상세 페이지 |
+| **F004** | 노션 API 연동 | `@notionhq/client` v5+ SDK를 통해 노션 **데이터소스(data source)** 쿼리 및 페이지 데이터를 서버사이드에서 fetch (`dataSources.query`, `Notion-Version: 2025-09-03`) | 모든 데이터의 단일 소스 — 노션이 유일한 데이터 저장소 | 견적서 목록 페이지, 견적서 상세 페이지 |
 
 ### 2. MVP 필수 지원 기능
 
@@ -84,7 +84,7 @@
 | **역할** | 노션 데이터베이스의 모든 견적서를 카드 리스트로 표시하는 앱 진입점 |
 | **진입 경로** | 앱 루트 URL 직접 접근 |
 | **사용자 행동** | 발행된 견적서 목록을 훑어보고, 특정 견적서 카드를 클릭하여 상세 페이지로 이동하거나 공유 링크를 복사하여 클라이언트에게 전달 |
-| **주요 기능** | • 노션 데이터베이스 쿼리 — 견적서 목록 fetch (서버 컴포넌트, 캐시 60초)<br>• 견적서 카드 렌더링 — 견적번호, 고객명, 발행일, 합계금액, 상태 배지 표시<br>• 상태 필터 — 전체/발행/승인/만료 탭 필터 (클라이언트 컴포넌트)<br>• **링크 복사** 버튼 — 해당 견적서 상세 URL을 클립보드에 복사<br>• **견적서 보기** 버튼 — 상세 페이지로 이동 |
+| **주요 기능** | • 노션 데이터소스 쿼리(`dataSources.query`) — 견적서 목록 fetch (서버 컴포넌트, 캐시 60초)<br>• 견적서 카드 렌더링 — 견적번호, 고객명, 발행일, 합계금액, 상태 배지 표시<br>• 상태 필터 — 전체/발행/승인/만료 탭 필터 (클라이언트 컴포넌트, `status` null 값은 "미분류"로 처리)<br>• **링크 복사** 버튼 — 해당 견적서 상세 URL을 클립보드에 복사<br>• **견적서 보기** 버튼 — 상세 페이지로 이동 |
 | **다음 이동** | 카드 클릭 → 견적서 상세 페이지, 링크 복사 → 토스트 알림 후 현재 페이지 유지 |
 
 ---
@@ -98,8 +98,8 @@
 | **역할** | 단일 견적서의 전체 내용을 인쇄 품질로 렌더링하고 PDF 다운로드를 제공하는 핵심 페이지 |
 | **진입 경로** | 견적서 목록 페이지에서 "견적서 보기" 클릭, 또는 운영자가 공유한 URL 직접 접근 |
 | **사용자 행동** | 견적서 전체 내용(헤더·항목표·합계·조건)을 확인한 뒤 PDF로 다운로드 |
-| **주요 기능** | • 노션 페이지 ID로 견적서 전체 데이터 fetch (서버 컴포넌트, ISR revalidate 300초)<br>• 견적서 렌더링 — 회사 로고/정보, 고객 정보, 견적 항목 테이블(품목/수량/단가/금액), 소계/세금/합계, 발행일/유효기간/조건, 메모<br>• **PDF 다운로드** 버튼 — `@react-pdf/renderer` 또는 `puppeteer`(서버사이드)로 PDF 생성 후 다운로드<br>• 뒤로가기 링크 — 목록 페이지로 이동 |
-| **다음 이동** | PDF 다운로드 → 브라우저 파일 다운로드 트리거 후 현재 페이지 유지, 에러 → 에러 페이지 |
+| **주요 기능** | • 노션 페이지 ID로 견적서 전체 데이터 fetch (서버 컴포넌트, ISR revalidate 300초)<br>• 견적서 렌더링 — 회사 로고/정보, 고객 정보, 견적 항목 테이블(품목/수량/단가/금액), 소계/세금/합계, 발행일/유효기간/조건, 메모<br>• **PDF 다운로드** 버튼 — MVP는 `window.print()` + `@media print` CSS로 인쇄용 레이아웃을 띄워 "PDF로 저장"(화면 마크업·Tailwind 재사용, 한글 리스크 최저). `react-to-print`로 트리거 UX 보완<br>• 유효기간 만료 견적은 "만료" 배지 표시(열람은 허용)<br>• 뒤로가기 링크 — 목록 페이지로 이동 |
+| **다음 이동** | PDF 다운로드 → 브라우저 인쇄/저장 다이얼로그 후 현재 페이지 유지, 에러 → 에러 페이지 |
 
 ---
 
@@ -135,11 +135,20 @@
 | 상태 | select | 발행 / 검토중 / 승인 / 만료 |
 | 메모 | rich_text | 특이사항 또는 계약 조건 메모 |
 
-### 견적 항목 (견적서 노션 페이지 본문 — 블록 파싱)
+### 견적 항목 (견적서 노션 페이지 본문)
 
-견적 항목 상세(품목/수량/단가/금액)는 노션 페이지 본문의 **테이블 블록** 또는 **데이터베이스 관계(relation)**로 관리한다.
+견적 항목 상세(품목/수량/단가/금액)는 노션 페이지 본문에 저장하며, **두 가지 저장 방식 중 선택**한다.
 
-권장 구조: 노션 페이지 본문에 테이블 블록 삽입
+| 방식 | 설명 | 적합 상황 | 파싱 비용 |
+|------|------|----------|----------|
+| **A. JSON 코드 블록** (권장) | 페이지 본문의 `code`/`rich_text` 블록에 항목 배열을 JSON으로 저장 | 앱/스크립트가 항목을 채울 때 | 블록 1회 조회 후 `JSON.parse` — 가장 견고 |
+| **B. 테이블 블록** | 노션 본문의 테이블 블록을 파싱 | 비개발자가 노션 UI에서 직접 편집할 때 | 페이지 children → 테이블 children **2단계 조회**(견적 1건 ≈ 3 API 호출) |
+
+> **방식 B 주의사항** (택할 경우 필수):
+> - 셀은 `rich_text` 배열 — 빈 셀은 `[]`, `plain_text`로 추출
+> - 숫자는 문자열로 저장됨(`"₩1,000"`) → 콤마·통화기호 제거 + `NaN` 가드 파서 필요
+> - 열 식별은 **인덱스가 아닌 헤더 텍스트 기반 동적 매핑** (노션에서 열 순서 변경 시 깨짐 방지)
+> - `has_column_header`가 true면 첫 행은 헤더 → 데이터에서 제외
 
 | 필드명 | 설명 |
 |--------|------|
@@ -152,19 +161,21 @@
 ### 앱 내부 TypeScript 타입 (변환 후 사용)
 
 ```typescript
-// 노션 API 응답을 변환한 앱 내부 타입
+// 노션 API 응답을 변환한 앱 내부 타입.
+// strict 모드 주의: 노션 email/number/date/select 프로퍼티는 값이 없으면 null,
+// title/rich_text는 항상 배열(빈 배열 가능). 정규화 레이어에서 null 가드 + fallback 후 아래 타입으로 변환한다.
 type Quote = {
-  id: string              // 노션 페이지 ID
-  title: string           // 견적서 제목
-  quoteNumber: string     // 견적번호
-  clientName: string      // 고객명
-  clientEmail: string     // 고객 이메일
-  issuedAt: string        // 발행일 (ISO 8601)
-  expiresAt: string       // 유효기간 (ISO 8601)
-  totalAmount: number     // 합계금액
-  status: 'issued' | 'reviewing' | 'approved' | 'expired'
-  memo: string            // 메모
-  items: QuoteItem[]      // 견적 항목 목록
+  id: string                  // 노션 페이지 ID
+  title: string               // 견적서 제목 (빈 title → '제목 없음' fallback)
+  quoteNumber: string         // 견적번호
+  clientName: string          // 고객명
+  clientEmail: string | null  // 고객 이메일 (미입력 가능)
+  issuedAt: string | null     // 발행일 (ISO 8601, 미입력 가능)
+  expiresAt: string | null    // 유효기간 (ISO 8601, 미입력 가능)
+  totalAmount: number | null  // 합계금액 (미입력 가능)
+  status: 'issued' | 'reviewing' | 'approved' | 'expired' | null // select 미선택 → null
+  memo: string                // 메모 (빈 값 → '')
+  items: QuoteItem[]          // 견적 항목 목록
 }
 
 type QuoteItem = {
@@ -194,48 +205,56 @@ type QuoteItem = {
 
 ### 노션 API 연동
 
-- **`@notionhq/client`** (공식 SDK) — 노션 데이터베이스 쿼리 및 페이지 fetch
-- 환경변수: `NOTION_TOKEN`, `NOTION_DATABASE_ID`
+- **`@notionhq/client` v5+** (공식 SDK) — 노션 **데이터소스(data source)** 쿼리 및 페이지 fetch
+  - ⚠️ Notion API는 **2025-09-03 버전부터 database(컨테이너)와 data source(쿼리 대상)를 분리**했다. 구형 `databases.query(database_id)`가 아닌 **`dataSources.query(data_source_id)`** 를 사용해야 하며, 이를 지원하는 SDK는 v5 이상이다. (현 `package.json`에 미설치 → `npm i @notionhq/client` 필요)
+  - 클라이언트 생성 시 `notionVersion: '2025-09-03'` 명시
+- 환경변수: `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID`
+  - data source ID는 배포/빌드 시 1회 조회(`databases.retrieve` → `data_sources[]`)하여 env로 고정 — ISR 페이지마다 discovery 호출 회피
 - 호출 위치: Next.js 서버 컴포넌트 / Route Handler (API 키 클라이언트 노출 방지)
 - 캐시 전략: `next/cache`의 `revalidateTag` 또는 ISR `revalidate` 옵션
+- Rate limit(평균 3 req/s)은 ISR 캐시(60s/300s) 환경에서 비이슈. 단, `generateStaticParams`로 다수 견적 동시 빌드 시 순간 버스트 대비 가벼운 429 백오프 권장
 
-### PDF 생성 (두 가지 방식 중 선택)
+### PDF 생성 (복잡도·한글 리스크 오름차순 — MVP는 방식 1)
 
-**방식 A — 클라이언트 사이드: `@react-pdf/renderer`** (권장 — 심플)
-- React 컴포넌트로 PDF 레이아웃 직접 작성
-- 브라우저에서 PDF 생성 후 즉시 다운로드
-- 장점: 서버 리소스 불필요, 구현 단순
-- 단점: 한글 폰트 직접 embed 필요 (`NanumGothic` 등 Base64 embed)
+**방식 1 — 브라우저 인쇄: `window.print()` + `@media print` CSS** (MVP 권장 ✅)
+- 견적서 화면 마크업(Tailwind/shadcn)을 그대로 재사용하고, `@media print` CSS로 인쇄 레이아웃만 다듬은 뒤 브라우저 "PDF로 저장"
+- `react-to-print`로 다운로드 버튼 트리거 UX 보완
+- 장점: **별도 PDF 코드베이스 불필요**, 서버리스 함수·폰트 임베드 불필요, **한글 리스크 최저**(브라우저/OS가 이미 한글 렌더링)
+- 단점: 인쇄 다이얼로그 1단계 추가(원클릭 자동 다운로드 아님)
 
-**방식 B — 서버 사이드: `puppeteer` + `@sparticuz/chromium`** (선택 — 고품질)
-- Route Handler에서 Headless Chrome으로 견적서 페이지를 렌더링하여 PDF 생성
-- 장점: CSS 완벽 반영, 한글 폰트 이슈 없음
-- 단점: Vercel 함수 크기 제한 주의 (Edge 불가, Node.js 런타임만 가능)
+**방식 2 — 서버 사이드: `puppeteer-core` + `@sparticuz/chromium-min`** (브랜딩된 자동 PDF 필요 시)
+- Route Handler에서 Headless Chrome으로 견적서 페이지를 렌더링하여 PDF 생성 — **HTML/Tailwind 그대로 재사용**, 한글 리스크 낮음, 원클릭 서버 PDF
+- 단점: 운영 복잡도(런타임 Chromium 다운로드, 콜드스타트, 메모리 튜닝). Vercel은 Node.js 런타임 필수·언집 250MB 한도 주의
 
-> **추천**: MVP 단계에서는 방식 A(`@react-pdf/renderer`)로 시작, 한글 품질 이슈 발생 시 방식 B로 전환
+**방식 3 — 클라이언트 PDF: `@react-pdf/renderer`** (MVP 부적합 ❌)
+- ⚠️ 이 라이브러리는 **HTML/CSS/Tailwind를 사용하지 않는다.** 자체 primitive(`<Document>/<Page>/<View>/<Text>`)와 Yoga 기반 `StyleSheet`로 **웹 화면과 별개의 레이아웃을 재구현**해야 하며 → 두 벌의 코드베이스 + 시각적 드리프트 리스크
+- 한글: variable 폰트 미지원(static weight TTF 필요), TTF 변환 오류·글리프 누락·폰트 비동기 로딩 이슈 이력. 전체 NanumGothic Base64 임베드 시 번들 ~5MB 비대화
+- 완전 클라이언트/서버리스 불요가 유일한 장점이나 위 리스크로 MVP 기본값으로는 부적합
+
+> **추천 경로**: MVP는 **방식 1(`window.print()`)** 로 시작 → 브랜딩된 자동 서버 PDF가 필요해지면 **방식 2(puppeteer)** 로 격상. 방식 3은 서버를 전혀 둘 수 없는 제약이 있을 때만 고려.
 
 ### 배포
 
 - **Vercel** — Next.js 16 최적화 배포 플랫폼
-- 환경변수 관리: Vercel 대시보드에서 `NOTION_TOKEN`, `NOTION_DATABASE_ID` 설정
+- 환경변수 관리: Vercel 대시보드에서 `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID` 설정
 
 ---
 
 ## 아키텍처 요약
 
 ```
-[노션 데이터베이스]
-        ↓ @notionhq/client (서버사이드)
+[노션 데이터소스 (data source, API 2025-09-03)]
+        ↓ @notionhq/client v5 · dataSources.query (서버사이드)
 [Next.js 16 App Router]
   ├── 견적서 목록 페이지 (RSC, ISR 60s)
-  │     └── 노션 DB 쿼리 → 카드 목록 렌더링
+  │     └── dataSources.query → 카드 목록 렌더링
   ├── 견적서 상세 페이지 (RSC, ISR 300s)
-  │     └── 노션 페이지 fetch → 견적서 렌더링
+  │     └── 노션 페이지 fetch → 정규화(null 가드) → 견적서 렌더링
   │     └── PDF 다운로드 버튼 (클라이언트 컴포넌트)
-  │           └── @react-pdf/renderer → Blob → 파일 다운로드
+  │           └── window.print() + @media print → 브라우저 "PDF로 저장"
   └── 에러 페이지 (error.tsx / not-found.tsx)
 
-[Vercel] — 환경변수: NOTION_TOKEN, NOTION_DATABASE_ID
+[Vercel] — 환경변수: NOTION_TOKEN, NOTION_DATA_SOURCE_ID
 ```
 
 ---
@@ -244,9 +263,9 @@ type QuoteItem = {
 
 ### In Scope (MVP에 포함)
 
-- 노션 데이터베이스 기반 견적서 목록 조회
+- 노션 데이터소스(data source) 기반 견적서 목록 조회 (`@notionhq/client` v5)
 - 견적서 상세 내용 렌더링 (항목 테이블 포함)
-- PDF 다운로드 (`@react-pdf/renderer` 기반)
+- PDF 다운로드 (`window.print()` + `@media print` CSS 기반)
 - 공유 링크(URL) 클립보드 복사
 - 기본 에러 처리 (404, API 오류)
 - Vercel 배포
@@ -268,10 +287,24 @@ type QuoteItem = {
 | 기준 | 측정 방법 |
 |------|----------|
 | 견적서 목록이 노션 변경 후 60초 이내 반영 | ISR revalidate 설정 확인 |
-| 견적서 상세 페이지에서 PDF 다운로드 성공 | 브라우저 다운로드 완료, 파일 열람 가능 |
-| PDF 한글 깨짐 없음 | 폰트 embed 확인 |
+| 견적서 상세 페이지에서 PDF 저장 성공 | 브라우저 인쇄→"PDF로 저장" 완료, 파일 열람 가능 |
+| PDF 한글 깨짐 없음 | 인쇄 미리보기에서 한글 정상 표시 확인 |
 | 존재하지 않는 견적서 URL 접근 시 에러 페이지 표시 | not-found.tsx 동작 확인 |
 | Vercel 배포 후 공유 링크로 클라이언트 접근 성공 | 실제 URL 공유 테스트 |
+| 견적서 URL이 추측 불가 | 견적서 ID로 노션 페이지 UUID 사용(순차 ID 금지) 확인 |
+
+---
+
+## 착수 전 기술 검증 체크리스트
+
+기술 검증(2026-06-23)에서 도출된 사전 확인 항목.
+
+- [ ] **노션 v5 + dataSources.query 동작 확인** — `Notion-Version: 2025-09-03`으로 data source ID 조회 및 쿼리 1건 성공
+- [ ] **한글 노션 왕복 스모크 테스트** — 한글 견적 1건 fetch → `plain_text` 한글 보존 확인 (노션 API의 UTF-8 인코딩은 문서에 명시되지 않음, 실무상 안전하나 1회 확인)
+- [ ] **`window.print()` 한글 인쇄 미리보기 확인** — 인쇄 레이아웃에서 한글·통화·테이블 정렬 정상 표시
+- [ ] **React Compiler 호환성 스모크 테스트** — `reactCompiler: true` 환경에서 PDF/인쇄 관련 클라이언트 컴포넌트 빌드·런타임 정상 동작 확인. 이슈 발생 시 `src/components/common/data-table.tsx`처럼 `"use no memo";` 적용 검토
+- [ ] **견적 항목 저장 방식 확정** — JSON 코드 블록(권장) vs 테이블 블록 중 택1, 파서 구현
+- [ ] **정규화 레이어 null 가드** — 노션 nullable 프로퍼티 → 앱 `Quote` 타입 변환 시 fallback 처리
 
 ---
 
