@@ -9,30 +9,11 @@ import {
   CardContent,
   CardFooter,
 } from "@/components/ui/card";
-import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { QuoteShareButton } from "@/components/quotes/quote-share-button";
+import { StatusBadge } from "@/components/quotes/status-badge";
 import { formatKRW } from "@/lib/format";
-import { quoteStatusLabel } from "@/lib/types";
-import type { Quote, QuoteStatus } from "@/lib/types";
-
-// 견적서 상태별 배지 variant 매핑 (단일 소스).
-// 라벨은 quoteStatusLabel(types.ts)을 재사용하고, 여기서는 표시 스타일만 정의한다.
-// status === null(미분류) 은 아래 STATUS_BADGE_FALLBACK 사용.
-// 의미론적 구분: 승인(강조/긍정) > 발행(정보/보통) > 검토중(중립/약함) > 만료(위험/경고)
-const STATUS_BADGE_VARIANT: Record<
-  QuoteStatus,
-  React.ComponentProps<typeof Badge>["variant"]
-> = {
-  approved: "default",     // 승인 — primary(진한 강조), 긍정적 완결 상태
-  issued: "secondary",     // 발행 — secondary(연회색), 정보성 중간 강조
-  reviewing: "outline",    // 검토중 — outline(테두리만), 중립/진행중
-  expired: "destructive",  // 만료 — destructive(빨강), 위험/주의 경고
-};
-
-// status 가 null 일 때의 라벨/variant fallback.
-const STATUS_LABEL_FALLBACK = "미분류";
-const STATUS_BADGE_FALLBACK = "outline" as const;
+import type { Quote } from "@/lib/types";
 
 interface QuoteCardProps {
   quote: Quote;
@@ -49,12 +30,6 @@ export function QuoteCard({ quote }: QuoteCardProps) {
     ? format(new Date(issuedAt), "yyyy.MM.dd")
     : "-";
 
-  // 상태 라벨/배지 variant (단일 소스 재사용 + null fallback).
-  const statusLabel = status ? quoteStatusLabel[status] : STATUS_LABEL_FALLBACK;
-  const statusVariant = status
-    ? STATUS_BADGE_VARIANT[status]
-    : STATUS_BADGE_FALLBACK;
-
   // hover 시 미세한 elevation 효과로 카드 클릭 가능성 암시
   return (
     <Card className="h-full transition-all duration-200 hover:-translate-y-0.5 hover:shadow-md hover:ring-foreground/20">
@@ -64,7 +39,7 @@ export function QuoteCard({ quote }: QuoteCardProps) {
           <span className="font-mono text-xs tracking-wider text-muted-foreground/80">
             {quoteNumber}
           </span>
-          <Badge variant={statusVariant}>{statusLabel}</Badge>
+          <StatusBadge status={status} />
         </div>
         {/* 제목: 주 정보, 최대 2줄 */}
         <CardTitle className="mt-0.5 line-clamp-2">{title}</CardTitle>

@@ -1,34 +1,48 @@
 import type { Metadata } from "next";
+import { notFound } from "next/navigation";
 
-import { PageHeader } from "@/components/layout/page-header";
+import { QuoteDetail } from "@/components/quotes/quote-detail";
+import { getQuote } from "@/lib/notion";
 
-export const metadata: Metadata = {
-  title: "견적서 상세",
-};
+// ISR 재검증 주기(상세): 300초. (목록은 60초)
+export const revalidate = 300;
+
+// 견적번호를 문서 타이틀로 사용. 없는 견적서면 기본 타이틀.
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
+  const quote = await getQuote(id);
+
+  if (!quote) {
+    return { title: "견적서를 찾을 수 없습니다" };
+  }
+
+  return { title: `견적서 ${quote.quoteNumber}` };
+}
 
 // 견적서 상세 페이지 — 핵심 페이지 (F002 / F003 / F004).
 // RSC로 노션 페이지를 조회(ISR 300초)해 견적서 전체 내용을 인쇄 품질로 렌더링한다.
-// TODO(노션 연동):
-//   1. getQuote(id)로 Quote 조회 → 없으면 notFound()
-//   2. 헤더(회사/고객 정보) + 항목 테이블(ui/table) + 합계 + 조건/메모 렌더링
-//   3. 유효기간 만료 시 "만료" 배지 표시(열람은 허용)
-//   4. PDF 다운로드 버튼(클라이언트 컴포넌트): window.print() + @media print + react-to-print
-//   5. 목록으로 돌아가는 뒤로가기 링크
-// export const revalidate = 300;
+// getQuote(노션 접근)는 RSC인 이 page.tsx에서만 호출한다.
+// TODO(Phase 5): PDF 다운로드 버튼(클라이언트 컴포넌트) — window.print() + react-to-print.
 export default async function QuoteDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
+  const quote = await getQuote(id);
+
+  // 없는 견적서(잘못된 ID 포함)면 404 화면(not-found.tsx) 렌더.
+  if (!quote) {
+    notFound();
+  }
 
   return (
-    <div className="mx-auto flex w-full max-w-3xl flex-1 flex-col gap-6 p-4 md:p-6">
-      <PageHeader
-        title="견적서 상세"
-        description={`견적서 ID: ${id} (노션 연동 후 실제 내용으로 교체)`}
-      />
-      {/* TODO: 노션 연동 후 견적서 본문 + PDF 다운로드 버튼 렌더링 */}
+    <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col p-4 md:px-6 md:py-10">
+      <QuoteDetail quote={quote} />
     </div>
   );
 }

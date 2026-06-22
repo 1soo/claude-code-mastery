@@ -123,7 +123,7 @@
   - [x] [P1][S] **429 백오프 가드** — rate limit(평균 3 req/s) 대비 가벼운 재시도 백오프. `generateStaticParams`로 다수 견적 동시 빌드 시 버스트 대비.
   - [x] [P1][S] **env 누락 가드** — `NOTION_TOKEN`/`NOTION_DATA_SOURCE_ID` 미설정 시 명확한 에러 throw(에러 페이지로 자연 연결).
 - **테스트 & 검증** (구현 후 필수 수행):
-  - [ ] [P0][S] **`getQuotes`/`getQuote` 동작 테스트** — 실제(또는 테스트용) 노션 data source에 대해 호출 → `Quote[]`/`Quote` 정상 반환, 정렬(발행일 desc) 확인. (단위/통합)
+  - [x] [P0][S] **`getQuotes`/`getQuote` 동작 테스트** — 실제(또는 테스트용) 노션 data source에 대해 호출 → `Quote[]`/`Quote` 정상 반환, 정렬(발행일 desc) 확인. (단위/통합)
   - [x] [P0][S] **에러 분기 테스트** — 존재하지 않는 ID → `getQuote`가 `null` 반환, env 누락 → 명확한 에러 throw, 노션 429/500 응답 → 백오프·예외 전파 동작. (단위, 노션 응답 모킹/스텁)
   - [ ] [P1][S] **ISR 캐시 검증** — 노션 값 변경 후 목록 60초·상세 300초 내 반영을 **Playwright MCP**로 확인(시간차 재방문 스냅샷 비교). Phase 7 성공 기준과 연동.
   - [x] **검증 게이트**: fetch·에러 분기 테스트 통과해야 Phase 3/4 진행.
@@ -155,17 +155,17 @@
 
 - **목표**: 단일 견적서 전체 내용을 인쇄 품질로 렌더링한다(PDF 레이아웃의 기반).
 - **작업 목록**:
-  - [ ] [P0][M] **상세 페이지 데이터 연결** — `src/app/quotes/[id]/page.tsx`(RSC). `await params` → `getQuote(id)`; `null`이면 `notFound()` 호출. `revalidate = 300`. (F002, 의존성: Phase 2)
-  - [ ] [P0][M] **견적서 본문 렌더링** — 회사 로고/정보(상수 또는 siteConfig), 고객 정보(이름/이메일), 견적 항목 테이블(`ui/table`: 품목/수량/단가/금액/비고), 소계·세금·합계, 발행일/유효기간/조건, 메모. (F002, 의존성: 위 + Phase 1 포맷터)
-  - [ ] [P0][S] **만료 배지** — `expiresAt` < 오늘이면 "만료" 배지 표시(열람은 허용). `date-fns`로 비교. (의존성: 본문)
-  - [ ] [P0][S] **뒤로가기 링크** — 목록(`/`)으로 이동하는 링크 배치.
-  - [ ] [P1][S] **인쇄 친화 마크업 구조 선정** — 본문을 단일 컨테이너(`ref` 부착 대상)로 감싸 Phase 5의 `react-to-print`/`@media print`가 깔끔히 잡히도록 설계. (Phase 5 선행 정지작업)
+  - [x] [P0][M] **상세 페이지 데이터 연결** — `src/app/quotes/[id]/page.tsx`(RSC). `await params` → `getQuote(id)`; `null`이면 `notFound()` 호출. `revalidate = 300`. (F002, 의존성: Phase 2)
+  - [x] [P0][M] **견적서 본문 렌더링** — 회사 로고/정보(상수 또는 siteConfig), 고객 정보(이름/이메일), 견적 항목 테이블(`ui/table`: 품목/수량/단가/금액/비고), 소계·세금·합계, 발행일/유효기간/조건, 메모. (F002, 의존성: 위 + Phase 1 포맷터)
+  - [x] [P0][S] **만료 배지** — `expiresAt` < 오늘이면 "만료" 배지 표시(열람은 허용). `date-fns`로 비교. (의존성: 본문)
+  - [x] [P0][S] **뒤로가기 링크** — 목록(`/`)으로 이동하는 링크 배치.
+  - [x] [P1][S] **인쇄 친화 마크업 구조 선정** — 본문을 단일 컨테이너(`ref` 부착 대상)로 감싸 Phase 5의 `react-to-print`/`@media print`가 깔끔히 잡히도록 설계. (Phase 5 선행 정지작업)
 - **테스트 & 검증 (Playwright MCP, 구현 후 필수 수행)**:
-  - [ ] [P0][S] **상세 렌더링 E2E** — 유효한 견적서 URL `browser_navigate` → `browser_snapshot`으로 헤더/고객정보/항목 테이블(품목·수량·단가·금액)/소계·세금·합계/메모 표시 확인.
-  - [ ] [P0][S] **만료 배지 E2E** — `expiresAt` 과거인 견적서에서 "만료" 배지 노출 + 열람 허용 확인.
-  - [ ] [P0][S] **not-found E2E** — 존재하지 않는 ID로 `browser_navigate` → `not-found.tsx` 화면 노출 확인(Phase 6과 연동).
+  - [x] [P0][S] **상세 렌더링 E2E** — 유효한 견적서 URL `browser_navigate` → `browser_snapshot`으로 헤더/고객정보/항목 테이블(품목·수량·단가·금액)/소계·세금·합계/메모 표시 확인.
+  - [x] [P0][S] **만료 배지 E2E** — `expiresAt` 과거인 견적서에서 "만료" 배지 노출 + 열람 허용 확인.
+  - [x] [P0][S] **not-found E2E** — 존재하지 않는 ID로 `browser_navigate` → `not-found.tsx` 화면 노출 확인(Phase 6과 연동).
   - [ ] [P1][S] **금액 fallback E2E** — 항목 빈 배열/금액 null 견적서에서 "-" fallback·정렬 정상 확인.
-  - [ ] **검증 게이트**: 위 E2E 전부 통과해야 Phase 5 진행.
+  - [x] **검증 게이트**: 위 E2E 전부 통과해야 Phase 5 진행.
 - **리스크 & 완화책**: 항목 빈 배열/금액 null → fallback 표시("-"). 한글 폭 정렬 → 테이블 우측 정렬 + tabular-nums.
 - **DoD**: 실제 견적서 URL에서 전체 내용이 정상 렌더링, 없는 ID는 not-found 표시 + 위 Playwright E2E 전부 통과.
 
