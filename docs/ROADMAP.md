@@ -136,16 +136,16 @@
 
 - **목표**: 앱 진입점(`/`)에서 견적서 카드 목록·상태 필터·링크 복사를 제공한다.
 - **작업 목록**:
-  - [ ] [P0][M] **목록 페이지 데이터 연결** — `src/app/page.tsx`(RSC). `getQuotes()` 호출 → 카드 그리드 렌더링. 0건이면 기존 `EmptyState` 유지. (F001, 의존성: Phase 2)
-  - [ ] [P0][S] **견적서 카드 컴포넌트** — `src/components/quotes/quote-card.tsx`. `ui/card` + `ui/badge`(상태, `quoteStatusLabel` 재사용, `null`→"미분류") 사용. 표시: 견적번호·고객명·발행일·합계금액(₩ 포맷)·상태 배지. "견적서 보기" 링크(`/quotes/[id]`). (의존성: 위)
-  - [ ] [P0][S] **링크 복사 버튼 (F005)** — 클라이언트 컴포넌트 `quote-share-button.tsx`. 상세 URL을 `navigator.clipboard`로 복사 → `sonner` 토스트. siteConfig.url 기반 절대 URL 생성. (F005, 의존성: 카드)
-  - [ ] [P1][M] **상태 필터 탭** — 클라이언트 컴포넌트(전체/발행/승인/만료). `status === null`은 "미분류"로 처리. **TanStack Table 미사용**(단순 클라이언트 필터로 충분 → React Compiler 함정 회피). 필요 시 `ui/tabs`는 `npx shadcn@latest add tabs`로 추가. (F001, 의존성: 카드)
+  - [x] [P0][M] **목록 페이지 데이터 연결** — `src/app/page.tsx`(RSC). `getQuotes()` 호출 → 카드 그리드 렌더링. 0건이면 기존 `EmptyState` 유지. (F001, 의존성: Phase 2)
+  - [x] [P0][S] **견적서 카드 컴포넌트** — `src/components/quotes/quote-card.tsx`. `ui/card` + `ui/badge`(상태, `quoteStatusLabel` 재사용, `null`→"미분류") 사용. 표시: 견적번호·고객명·발행일·합계금액(₩ 포맷)·상태 배지. "견적서 보기" 링크(`/quotes/[id]`). (의존성: 위)
+  - [x] [P0][S] **링크 복사 버튼 (F005)** — 클라이언트 컴포넌트 `quote-share-button.tsx`. 상세 URL을 `navigator.clipboard`로 복사 → `sonner` 토스트. siteConfig.url 기반 절대 URL 생성. (F005, 의존성: 카드)
+  - [x] [P1][M] **상태 필터 탭** — 클라이언트 컴포넌트(전체/발행/승인/만료). `status === null`은 "미분류"로 처리. **TanStack Table 미사용**(단순 클라이언트 필터로 충분 → React Compiler 함정 회피). 필요 시 `ui/tabs`는 `npx shadcn@latest add tabs`로 추가. (F001, 의존성: 카드)
   - [ ] [P2][S] **로딩 상태** — `src/app/loading.tsx` 또는 카드 스켈레톤(`npx shadcn@latest add skeleton`).
 - **테스트 & 검증 (Playwright MCP, 구현 후 필수 수행)**:
-  - [ ] [P0][S] **목록 렌더링 E2E** — `browser_navigate`로 `/` 진입 → `browser_snapshot`으로 카드(견적번호·고객명·발행일·합계·상태 배지) 표시 확인. 0건일 때 `EmptyState` 노출 확인.
-  - [ ] [P0][S] **상태 필터 E2E** — `browser_click`으로 발행/승인/만료 탭 전환 → 스냅샷으로 카드 필터링 확인. `status === null` 카드가 "미분류"로 표시되는지 확인.
-  - [ ] [P0][S] **링크 복사 E2E (F005)** — 복사 버튼 `browser_click` → `sonner` 토스트 노출 확인. 클립보드 값이 상세 절대 URL인지 `browser_evaluate`로 검증.
-  - [ ] **검증 게이트**: 위 E2E 전부 통과해야 다음 단계 진행.
+  - [x] [P0][S] **목록 렌더링 E2E** — `browser_navigate`로 `/` 진입 → `browser_snapshot`으로 카드(견적번호·고객명·발행일·합계·상태 배지) 표시 확인. 0건일 때 `EmptyState` 노출 확인.
+  - [x] [P0][S] **상태 필터 E2E** — `browser_click`으로 발행/승인/만료 탭 전환 → 스냅샷으로 카드 필터링 확인. `status === null` 카드가 "미분류"로 표시되는지 확인.
+  - [x] [P0][S] **링크 복사 E2E (F005)** — 복사 버튼 `browser_click` → `sonner` 토스트 노출 확인. 클립보드 값이 상세 절대 URL인지 `browser_evaluate`로 검증.
+  - [x] **검증 게이트**: 위 E2E 전부 통과해야 다음 단계 진행.
 - **리스크 & 완화책**: 필터를 TanStack Table로 구현하려는 유혹 → 단순 배열 필터로 처리해 `"use no memo"` 부담 제거.
 - **DoD**: `/`에서 노션 견적서 카드가 보이고, 필터 동작, 링크 복사 시 토스트 표시 + 위 Playwright E2E 전부 통과.
 
