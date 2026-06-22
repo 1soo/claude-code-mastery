@@ -117,16 +117,16 @@
 
 - **목표**: 페이지가 호출할 `getQuotes`/`getQuote`를 실구현하고 ISR 캐시 전략을 적용한다.
 - **작업 목록**:
-  - [ ] [P0][M] **`getQuotes()` 구현** — `src/lib/notion.ts`. `dataSources.query({ data_source_id: dataSourceId, ... })` → `normalizeQuote`로 `Quote[]` 변환. 정렬(발행일 desc 권장)은 query body 또는 변환 후 처리. (F001/F004, 의존성: Phase 1)
-  - [ ] [P0][M] **`getQuote(id)` 구현** — `pages.retrieve(id)` + 본문 항목 파싱 → `Quote`. 존재하지 않으면 `null` 반환(호출부 `notFound()` 처리용). (F002/F004, 의존성: Phase 1)
+  - [x] [P0][M] **`getQuotes()` 구현** — `src/lib/notion.ts`. `dataSources.query({ data_source_id: dataSourceId, ... })` → `normalizeQuote`로 `Quote[]` 변환. 정렬(발행일 desc 권장)은 query body 또는 변환 후 처리. (F001/F004, 의존성: Phase 1)
+  - [x] [P0][M] **`getQuote(id)` 구현** — `pages.retrieve(id)` + 본문 항목 파싱 → `Quote`. 존재하지 않으면 `null` 반환(호출부 `notFound()` 처리용). (F002/F004, 의존성: Phase 1)
   - [ ] [P0][S] **ISR/캐시 전략 적용** — 목록 페이지 `revalidate = 60`, 상세 페이지 `revalidate = 300`. 필요 시 `revalidateTag` 도입 검토. (성공 기준 "60초 내 반영"의 핵심)
-  - [ ] [P1][S] **429 백오프 가드** — rate limit(평균 3 req/s) 대비 가벼운 재시도 백오프. `generateStaticParams`로 다수 견적 동시 빌드 시 버스트 대비.
-  - [ ] [P1][S] **env 누락 가드** — `NOTION_TOKEN`/`NOTION_DATA_SOURCE_ID` 미설정 시 명확한 에러 throw(에러 페이지로 자연 연결).
+  - [x] [P1][S] **429 백오프 가드** — rate limit(평균 3 req/s) 대비 가벼운 재시도 백오프. `generateStaticParams`로 다수 견적 동시 빌드 시 버스트 대비.
+  - [x] [P1][S] **env 누락 가드** — `NOTION_TOKEN`/`NOTION_DATA_SOURCE_ID` 미설정 시 명확한 에러 throw(에러 페이지로 자연 연결).
 - **테스트 & 검증** (구현 후 필수 수행):
   - [ ] [P0][S] **`getQuotes`/`getQuote` 동작 테스트** — 실제(또는 테스트용) 노션 data source에 대해 호출 → `Quote[]`/`Quote` 정상 반환, 정렬(발행일 desc) 확인. (단위/통합)
-  - [ ] [P0][S] **에러 분기 테스트** — 존재하지 않는 ID → `getQuote`가 `null` 반환, env 누락 → 명확한 에러 throw, 노션 429/500 응답 → 백오프·예외 전파 동작. (단위, 노션 응답 모킹/스텁)
+  - [x] [P0][S] **에러 분기 테스트** — 존재하지 않는 ID → `getQuote`가 `null` 반환, env 누락 → 명확한 에러 throw, 노션 429/500 응답 → 백오프·예외 전파 동작. (단위, 노션 응답 모킹/스텁)
   - [ ] [P1][S] **ISR 캐시 검증** — 노션 값 변경 후 목록 60초·상세 300초 내 반영을 **Playwright MCP**로 확인(시간차 재방문 스냅샷 비교). Phase 7 성공 기준과 연동.
-  - [ ] **검증 게이트**: fetch·에러 분기 테스트 통과해야 Phase 3/4 진행.
+  - [x] **검증 게이트**: fetch·에러 분기 테스트 통과해야 Phase 3/4 진행.
 - **리스크 & 완화책**: data source ID discovery 비용 → env 고정으로 회피(이미 설계됨). 빌드 버스트 429 → 백오프 + ISR 캐시.
 - **DoD**: 두 함수가 실제 노션 데이터로 `Quote[]`/`Quote`를 반환, stub `throw` 제거됨 + fetch·에러 분기 테스트 통과.
 
