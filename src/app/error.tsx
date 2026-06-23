@@ -17,8 +17,13 @@ export default function GlobalError({
   reset: () => void;
 }) {
   useEffect(() => {
-    // TODO: 운영 환경에서는 에러 로깅 서비스로 전송
+    // 원본 에러(노션 토큰·내부 정보 포함 가능)는 화면에 노출하지 않고 콘솔로만 로깅한다.
+    // digest 는 서버 측 에러를 식별하는 해시 — 함께 기록해 추적에 활용한다.
+    // TODO: 운영 환경에서는 에러 로깅 서비스(Sentry 등)로 전송
     console.error(error);
+    if (error.digest) {
+      console.error("error.digest:", error.digest);
+    }
   }, [error]);
 
   return (
@@ -26,7 +31,7 @@ export default function GlobalError({
       <EmptyState
         icon={AlertTriangle}
         title="문제가 발생했습니다"
-        description="견적서를 불러오는 중 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
+        description="일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요."
       >
         <div className="flex items-center gap-2">
           <Button variant="outline" onClick={() => reset()}>
