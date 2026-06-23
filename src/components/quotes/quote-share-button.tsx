@@ -15,8 +15,11 @@ interface QuoteShareButtonProps {
 // 클립보드/토스트는 브라우저 API 이므로 클라이언트 컴포넌트로 분리한다.
 export function QuoteShareButton({ quoteId }: QuoteShareButtonProps) {
   async function handleCopy() {
-    // siteConfig.url 을 기준으로 상세 페이지 절대 URL 을 만든다(단일 소스 재사용).
-    const shareUrl = `${siteConfig.url}/quotes/${quoteId}`;
+    // 배포 도메인 자동 대응: 클라이언트 클릭 시점의 origin 사용(localhost/프로덕션 모두 정확).
+    // 비브라우저 경로 방어를 위해 siteConfig.url 폴백.
+    const origin =
+      typeof window !== "undefined" ? window.location.origin : siteConfig.url;
+    const shareUrl = `${origin}/quotes/${quoteId}`;
 
     try {
       await navigator.clipboard.writeText(shareUrl);

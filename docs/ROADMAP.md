@@ -209,9 +209,9 @@
 - **목표**: Vercel 배포 후 PRD 성공 기준을 전수 검증한다.
 - **작업 목록**:
   - [ ] [P0][S] **Vercel 환경변수 설정** — 대시보드에 `NOTION_TOKEN`, `NOTION_DATA_SOURCE_ID` 등록. (의존성: Phase 2)
-  - [ ] [P0][S] **프로덕션 빌드 검증** — `npm run build` + `npm run lint` 무오류, React Compiler 빌드 통과.
-  - [ ] [P0][S] **전체 단위 테스트 통과** — Phase 1·2의 vitest 단위 테스트 전부 통과(회귀 확인).
-  - [ ] [P0][S] **전체 E2E 회귀 (Playwright MCP)** — 배포 URL을 대상으로 Phase 3~6의 E2E 시나리오(목록·필터·복사·상세·인쇄·404/에러)를 `mcp__playwright__browser_*`로 재실행해 전수 통과 확인.
+  - [x] [P0][S] **프로덕션 빌드 검증** — `npm run build` + `npm run lint` 무오류, React Compiler 빌드 통과.
+  - [x] [P0][S] **전체 단위 테스트 통과** — Phase 1·2의 vitest 단위 테스트 전부 통과(회귀 확인).
+  - [x] [P0][S] **전체 E2E 회귀 (Playwright MCP)** — 배포 URL을 대상으로 Phase 3~6의 E2E 시나리오(목록·필터·복사·상세·인쇄·404/에러)를 `mcp__playwright__browser_*`로 재실행해 전수 통과 확인.
   - [ ] [P0][S] **성공 기준 전수 체크** (PRD 성공 기준, Playwright MCP로 검증):
     - [ ] 노션 변경 후 60초 내 목록 반영(ISR revalidate)
     - [ ] 상세에서 PDF 저장 성공 + 파일 열람 가능
@@ -219,7 +219,7 @@
     - [ ] 존재하지 않는 URL → not-found 표시
     - [ ] Vercel 공유 링크로 클라이언트 접근 성공
     - [ ] 견적서 URL이 노션 UUID(순차 ID 아님)인지 확인
-  - [ ] [P1][S] **공유 링크 절대 URL 점검** — 배포 도메인 반영(`siteConfig.url` 또는 런타임 origin)으로 링크 복사가 프로덕션 URL을 생성하는지 확인.
+  - [x] [P1][S] **공유 링크 절대 URL 점검** — 배포 도메인 반영(`siteConfig.url` 또는 런타임 origin)으로 링크 복사가 프로덕션 URL을 생성하는지 확인.
 - **DoD**: 배포 URL에서 성공 기준 6개 모두 통과.
 
 ---

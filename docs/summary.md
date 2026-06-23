@@ -29,3 +29,25 @@ Phase7: **배포 & 검수** — Vercel 출시 후 성공 기준 검증
 - **무오염**: 임시 검증 코드(`/api/verify`, `/verify-print`) 전부 삭제. 영구 산출물만 잔존.
 
 **Phase 1 인계**: (1) `normalizeQuote`는 `NOTION_PROP_TYPE`로 title↔rich_text 추출, (2) 항목 파서는 방식 A(JSON), (3) DB에 견적 1건 추가 후 한글 왕복·fetch 재확인.
+
+---
+
+## ✅ MVP 전체 완료 (Phase 0~7)
+
+| Phase | 내용 | 상태 | 커밋 |
+|---|---|---|---|
+| 0 | 착수 전 기술 검증 | ✅ | `0f4ac3b` |
+| 1 | 노션 정규화 레이어 (F004) | ✅ | `1a58d60` |
+| 2 | 데이터 fetch (F004) | ✅ | `29de282` |
+| 3 | 목록 페이지 (F001/F005) | ✅ | `c35527a` |
+| 4 | 상세 페이지 (F002) | ✅ | `e88207e` |
+| 5 | PDF 다운로드 (F003) | ✅ | `7345b87` |
+| 6 | 에러 처리 (F006) | ✅ | `92c4d77` |
+| 7 | 배포 & 검수 (로컬) | ✅ 로컬 검증 | (이 커밋) |
+
+- **검증**: vitest 단위 43개 통과 + Playwright E2E(목록/필터/공유복사/상세/만료/PDF 트리거/404) 통과 + `npm run build`(React Compiler)·`lint` 무오류.
+- **노션 데이터**: 테스트 견적 10건(상태 4종/이메일 null 3/만료 2) 생성해 실데이터로 검증.
+- **개발 방식**: 각 Phase = shrimp plan_task → nextjs-app-router-dev(기능) → ui-markup-specialist(UI 고도화) → Playwright 검증 → git commit → ROADMAP 체크.
+
+### 운영자 잔여 작업 (Phase 7 그룹 B — 실배포)
+`docs/deploy.md` 참조. Vercel 환경변수 설정 + 실배포 후 배포 URL에서 성공 기준 6개(60초 반영·PDF 한글·404·공유링크 접근·UUID·에러 미노출) 확인. ROADMAP의 해당 항목은 실배포 후 체크.
