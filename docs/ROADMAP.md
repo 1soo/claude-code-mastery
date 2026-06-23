@@ -175,14 +175,14 @@
 
 - **목표**: 상세 화면을 `window.print()` + `@media print` CSS로 PDF 저장(MVP 방식 1, 한글 리스크 최저).
 - **작업 목록**:
-  - [ ] [P0][S] **PDF 다운로드 버튼** — 클라이언트 컴포넌트 `quote-print-button.tsx`(`"use client"`). `react-to-print`의 `useReactToPrint`로 상세 본문 `ref`를 인쇄 트리거. React Compiler 이슈 시 `"use no memo";` 적용. (F003, 의존성: Phase 4 본문 ref)
-  - [ ] [P0][M] **`@media print` CSS** — 전역 또는 컴포넌트 스코프. 인쇄 시 헤더/사이드바/버튼/테마토글 숨김, A4 여백, 페이지 분할(`break-inside: avoid`), 색상 보존(`print-color-adjust: exact`). 화면 Tailwind 마크업 그대로 재사용. (F003, 의존성: 위)
-  - [ ] [P0][S] **한글 인쇄 검증** — 인쇄 미리보기에서 한글·₩·테이블 정렬 정상 확인(Phase 0 결과 재확인). (성공 기준 "PDF 한글 깨짐 없음")
+  - [x] [P0][S] **PDF 다운로드 버튼** — 클라이언트 컴포넌트 `quote-print-button.tsx`(`"use client"`). `react-to-print`의 `useReactToPrint`로 상세 본문 `ref`를 인쇄 트리거. React Compiler 이슈 시 `"use no memo";` 적용. (F003, 의존성: Phase 4 본문 ref)
+  - [x] [P0][M] **`@media print` CSS** — 전역 또는 컴포넌트 스코프. 인쇄 시 헤더/사이드바/버튼/테마토글 숨김, A4 여백, 페이지 분할(`break-inside: avoid`), 색상 보존(`print-color-adjust: exact`). 화면 Tailwind 마크업 그대로 재사용. (F003, 의존성: 위)
+  - [x] [P0][S] **한글 인쇄 검증** — 인쇄 미리보기에서 한글·₩·테이블 정렬 정상 확인(Phase 0 결과 재확인). (성공 기준 "PDF 한글 깨짐 없음")
 - **테스트 & 검증 (Playwright MCP, 구현 후 필수 수행)**:
-  - [ ] [P0][S] **인쇄 트리거 E2E** — 상세 페이지에서 PDF 다운로드 버튼 `browser_click` → 인쇄 다이얼로그 발생 확인(`browser_handle_dialog` 또는 `window.print` 호출 가로채기로 검증).
-  - [ ] [P0][S] **인쇄 레이아웃 검증** — `browser_emulate_media`(print) 적용 상태에서 `browser_snapshot`/`browser_take_screenshot`으로 헤더·사이드바·버튼·테마토글 숨김, A4 여백, 항목 테이블 페이지 분할(`break-inside: avoid`) 확인.
-  - [ ] [P0][S] **React Compiler 런타임 확인** — `reactCompiler: true` 빌드에서 `useReactToPrint` 컴포넌트가 런타임 오류 없이 동작하는지 확인(이슈 시 `"use no memo";`).
-  - [ ] **검증 게이트**: 인쇄 트리거·레이아웃 테스트 통과해야 Phase 6/7 진행.
+  - [x] [P0][S] **인쇄 트리거 E2E** — 상세 페이지에서 PDF 다운로드 버튼 `browser_click` → 인쇄 다이얼로그 발생 확인(`browser_handle_dialog` 또는 `window.print` 호출 가로채기로 검증).
+  - [x] [P0][S] **인쇄 레이아웃 검증** — `browser_emulate_media`(print) 적용 상태에서 `browser_snapshot`/`browser_take_screenshot`으로 헤더·사이드바·버튼·테마토글 숨김, A4 여백, 항목 테이블 페이지 분할(`break-inside: avoid`) 확인.
+  - [x] [P0][S] **React Compiler 런타임 확인** — `reactCompiler: true` 빌드에서 `useReactToPrint` 컴포넌트가 런타임 오류 없이 동작하는지 확인(이슈 시 `"use no memo";`).
+  - [x] **검증 게이트**: 인쇄 트리거·레이아웃 테스트 통과해야 Phase 6/7 진행.
 - **리스크 & 완화책**: 인쇄 다이얼로그 1단계 추가는 MVP 허용 범위. 자동/브랜딩 PDF 필요 시 방식 2(puppeteer)로 격상(Out of Scope).
 - **DoD**: 버튼 클릭 → 인쇄 다이얼로그 → "PDF로 저장" 성공, 한글 정상 + 위 Playwright 검증 통과.
 

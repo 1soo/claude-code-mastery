@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 
 import { QuoteDetail } from "@/components/quotes/quote-detail";
+import { QuotePrintFrame } from "@/components/quotes/quote-print-frame";
 import { getQuote } from "@/lib/notion";
 
 // ISR 재검증 주기(상세): 300초. (목록은 60초)
@@ -26,7 +27,9 @@ export async function generateMetadata({
 // 견적서 상세 페이지 — 핵심 페이지 (F002 / F003 / F004).
 // RSC로 노션 페이지를 조회(ISR 300초)해 견적서 전체 내용을 인쇄 품질로 렌더링한다.
 // getQuote(노션 접근)는 RSC인 이 page.tsx에서만 호출한다.
-// TODO(Phase 5): PDF 다운로드 버튼(클라이언트 컴포넌트) — window.print() + react-to-print.
+// PDF 다운로드(F003)는 클라이언트 컴포넌트 QuotePrintFrame 이 담당한다.
+// 액션 바(뒤로가기 + PDF 버튼)는 QuotePrintFrame 으로 이전했으므로
+// 서버 컴포넌트 QuoteDetail 은 인쇄 본문(<article data-print-area>)만 렌더한다.
 export default async function QuoteDetailPage({
   params,
 }: {
@@ -42,7 +45,9 @@ export default async function QuoteDetailPage({
 
   return (
     <div className="mx-auto flex w-full max-w-4xl flex-1 flex-col p-4 md:px-6 md:py-10">
-      <QuoteDetail quote={quote} />
+      <QuotePrintFrame quoteNumber={quote.quoteNumber}>
+        <QuoteDetail quote={quote} />
+      </QuotePrintFrame>
     </div>
   );
 }

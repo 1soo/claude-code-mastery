@@ -1,9 +1,6 @@
-import Link from "next/link";
-import { ArrowLeft } from "lucide-react";
 import { format, isBefore } from "date-fns";
 
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -57,24 +54,22 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
     : false;
 
   return (
-    <div className="flex flex-col gap-6">
-      {/* 뒤로가기: 인쇄 컨테이너 바깥(인쇄 대상 아님) */}
-      <div>
-        <Button asChild variant="ghost" size="sm">
-          <Link href="/">
-            <ArrowLeft />
-            목록으로
-          </Link>
-        </Button>
-      </div>
-
-      {/* 단일 인쇄 컨테이너 — Phase 5 react-to-print 가 이 ref 를 인쇄 */}
-      <article
-        data-print-area
-        className="flex flex-col gap-10 rounded-xl border bg-card p-8 text-card-foreground shadow-lg ring-1 ring-border/40 md:p-12"
-      >
+    // 단일 인쇄 컨테이너 — QuotePrintFrame 의 ref div 가 이 article 을 인쇄한다.
+    // 액션 바(뒤로가기 + PDF 버튼)는 QuotePrintFrame 으로 분리되어 있다.
+    <article
+      data-print-area
+      className={cn(
+        // 화면 레이아웃: 카드 형태, 내부 패딩, 그림자, 테두리, 라운드
+        "flex flex-col gap-10 rounded-xl border bg-card p-8 text-card-foreground shadow-lg ring-1 ring-border/40 md:p-12",
+        // 인쇄 전용: @page margin 이 여백 역할 → 패딩/그림자/테두리/라운드 제거
+        "print:p-0 print:shadow-none print:border-0 print:rounded-none print:ring-0",
+        // 인쇄 전용: 섹션 간 간격 줄여 페이지 공간 최적화
+        "print:gap-6",
+      )}
+    >
         {/* ── 문서 헤더: 발행자 / 타이틀 / 견적번호·상태 / 일자 ── */}
-        <header className="flex flex-col gap-6">
+        {/* 인쇄: 헤더 잘림 방지 + 헤더 직후 페이지 전환 방지 */}
+        <header className="flex flex-col gap-6 print:break-inside-avoid print:break-after-avoid print:gap-4">
           {/* 상단 행: 견적서 타이틀(좌) + 식별정보(우) */}
           <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
             {/* 발행자 + 문서 타이틀 */}
@@ -124,7 +119,8 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
         <Separator />
 
         {/* ── 거래 당사자: 공급자(좌) / 고객(우) 2단 카드 ── */}
-        <section className="space-y-4">
+        {/* 인쇄: 공급자·고객 카드가 페이지 경계에서 분리되지 않도록 */}
+        <section className="space-y-4 print:break-inside-avoid">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             거래 당사자
           </h2>
@@ -152,7 +148,8 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
         <Separator />
 
         {/* ── 견적 항목 테이블 ── */}
-        <section className="space-y-3">
+        {/* 인쇄: 테이블 헤더 잘림 방지 (행 단위 break는 CSS에서 tr에 적용) */}
+        <section className="space-y-3 print:break-inside-auto">
           <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
             견적 항목
           </h2>
@@ -231,12 +228,16 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
         </section>
 
         {/* ── 합계 영역: 가장 강한 시각 위계 ── */}
-        <section className="flex justify-end">
+        {/* 인쇄: 합계 박스가 페이지 경계에서 잘리지 않도록 */}
+        <section className="flex justify-end print:break-inside-avoid">
           {/* bg-primary / text-primary-foreground 로 문서 내 최상위 강조 */}
           <div
             className={cn(
+              // 화면: 작은 화면 전체 너비, 큰 화면 최소 너비 고정
               "w-full overflow-hidden rounded-md sm:w-auto sm:min-w-80",
               "border border-border",
+              // 인쇄: 전체 너비 활용 (sm: 브레이크포인트 무의미), 식별자 클래스
+              "print:w-full print:min-w-0 print-total-box",
             )}
           >
             <div className="flex items-center justify-between gap-8 bg-primary px-6 py-5">
@@ -254,7 +255,8 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
         {memo ? (
           <>
             <Separator />
-            <section className="space-y-3">
+            {/* 인쇄: 메모 섹션이 페이지 경계에서 잘리지 않도록 */}
+            <section className="space-y-3 print:break-inside-avoid">
               <h2 className="text-xs font-semibold uppercase tracking-widest text-muted-foreground">
                 메모 / 특이사항
               </h2>
@@ -267,7 +269,6 @@ export function QuoteDetail({ quote }: QuoteDetailProps) {
             </section>
           </>
         ) : null}
-      </article>
-    </div>
+    </article>
   );
 }
