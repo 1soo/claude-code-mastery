@@ -28,6 +28,15 @@
         "shadcn@latest",
         "mcp"
       ]
+    },
+    "shrimp-task-manager": {
+      "command": "node",
+      "args": ["C:\\projects\\claude-code-mastery\\mcp\\shrimp-task-manager"],
+      "env": {
+        "DATA_DIR": "C:\\projects\\claude-code-mastery\\ch18\\shrimp_data",
+        "TEMPLATES_USE": "en",
+        "ENABLE_GUI": "true"
+      }
     }
   }
 }
