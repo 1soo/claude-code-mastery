@@ -44,10 +44,45 @@ export function EventForm({
   const [description, setDescription] = useState(
     initialEvent?.description ?? "",
   );
+  const [errors, setErrors] = useState<{
+    title?: string;
+    ends_at?: string;
+    capacity?: string;
+  }>({});
   const [isPending, startTransition] = useTransition();
+
+  /** 클라이언트 즉시 검증. 통과하면 빈 객체, 아니면 필드별 한국어 메시지. */
+  function validate() {
+    const next: { title?: string; ends_at?: string; capacity?: string } = {};
+
+    if (title.trim() === "") {
+      next.title = "제목을 입력해 주세요.";
+    } else if (title.trim().length > 100) {
+      next.title = "제목은 100자 이내로 입력해 주세요.";
+    }
+
+    if (startsAt !== "" && endsAt !== "") {
+      if (new Date(endsAt).getTime() <= new Date(startsAt).getTime()) {
+        next.ends_at = "종료 시각은 시작 시각보다 늦어야 합니다.";
+      }
+    }
+
+    if (capacity.trim() !== "") {
+      const n = Number(capacity);
+      if (!Number.isInteger(n) || n < 1) {
+        next.capacity = "정원은 1명 이상이어야 합니다.";
+      }
+    }
+
+    return next;
+  }
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
+    const validationErrors = validate();
+    setErrors(validationErrors);
+    if (Object.keys(validationErrors).length > 0) return;
+
     startTransition(async () => {
       try {
         await onSubmitAction({
@@ -62,7 +97,7 @@ export function EventForm({
       } catch (error) {
         // redirect()는 throw로 전파된다 — 실패가 아니므로 다시 던져 Next가 처리하게 한다.
         if (isRedirectError(error)) throw error;
-        toast.error("저장에 실패했습니다. 다시 시도해 주세요.");
+        toast.error("저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       }
     });
   }
@@ -76,7 +111,12 @@ export function EventForm({
           value={title}
           onChange={(e) => setTitle(e.target.value)}
           required
+          maxLength={100}
+          aria-invalid={errors.title ? true : undefined}
         />
+        {errors.title && (
+          <p className="text-destructive text-sm">{errors.title}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -98,7 +138,11 @@ export function EventForm({
           value={endsAt}
           onChange={(e) => setEndsAt(e.target.value)}
           required
+          aria-invalid={errors.ends_at ? true : undefined}
         />
+        {errors.ends_at && (
+          <p className="text-destructive text-sm">{errors.ends_at}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">
@@ -116,9 +160,14 @@ export function EventForm({
           id="capacity"
           type="number"
           min={1}
+          step={1}
           value={capacity}
           onChange={(e) => setCapacity(e.target.value)}
+          aria-invalid={errors.capacity ? true : undefined}
         />
+        {errors.capacity && (
+          <p className="text-destructive text-sm">{errors.capacity}</p>
+        )}
       </div>
 
       <div className="flex flex-col gap-2">

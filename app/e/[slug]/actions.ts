@@ -11,6 +11,18 @@ export async function submitRsvp(
   slug: string,
   input: { name: string; status: RsvpStatus; companions: number },
 ): Promise<MyRsvp> {
+  // 서버측 재검증(보안 경계). 클라이언트 검증을 우회한 입력을 거른다.
+  const trimmedName = input.name.trim();
+  if (trimmedName === "") {
+    throw new Error("이름을 입력해 주세요.");
+  }
+  if (trimmedName.length > 50) {
+    throw new Error("이름은 50자 이내로 입력해 주세요.");
+  }
+  if (!Number.isInteger(input.companions) || input.companions < 0) {
+    throw new Error("동반 인원이 올바르지 않습니다.");
+  }
+
   const jar = await cookies();
 
   let token = jar.get("guest_token")?.value;
@@ -27,7 +39,7 @@ export async function submitRsvp(
   const supabase = await createClient();
   const { data, error } = await supabase.rpc("submit_rsvp", {
     p_slug: slug,
-    p_name: input.name,
+    p_name: trimmedName,
     p_status: input.status,
     p_party_size: 1 + input.companions,
     p_guest_token: token,

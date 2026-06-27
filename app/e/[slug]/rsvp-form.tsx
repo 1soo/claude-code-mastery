@@ -43,14 +43,20 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
   const [companions, setCompanions] = useState(
     initialRsvp ? initialRsvp.party_size - 1 : 0,
   );
+  const [nameError, setNameError] = useState<string | undefined>(undefined);
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     const trimmed = name.trim();
     if (!trimmed) {
-      toast.error("이름을 입력해주세요.");
+      setNameError("이름을 입력해 주세요.");
       return;
     }
+    if (trimmed.length > 50) {
+      setNameError("이름은 50자 이내로 입력해 주세요.");
+      return;
+    }
+    setNameError(undefined);
     startTransition(async () => {
       try {
         const result = await submitRsvpAction(slug, {
@@ -61,7 +67,7 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
         setSubmitted(result);
         toast.success("응답이 저장되었습니다.");
       } catch {
-        toast.error("응답 저장에 실패했어요. 잠시 후 다시 시도해주세요.");
+        toast.error("응답 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
       }
     });
   }
@@ -103,10 +109,18 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
         <Input
           id="rsvp-name"
           value={name}
-          onChange={(e) => setName(e.target.value)}
+          onChange={(e) => {
+            setName(e.target.value);
+            if (nameError) setNameError(undefined);
+          }}
           placeholder="예: 한강불주먹"
           autoComplete="off"
+          maxLength={50}
+          aria-invalid={nameError ? true : undefined}
         />
+        {nameError && (
+          <p className="text-destructive text-sm">{nameError}</p>
+        )}
       </div>
 
       <div className="space-y-2">
