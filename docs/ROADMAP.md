@@ -200,10 +200,15 @@
 
 ### 4.3 배포 및 모니터링
 
-- [ ] 환경 변수 설정 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`)
-- [ ] 프로덕션 빌드 검증 (`npm run build`)
-- [ ] 배포 (Vercel 등)
-- [ ] Supabase advisor 최종 점검 (보안/성능)
+- ✅ 환경 변수 설정 (`NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`) — Vercel 배포 동작으로 확인
+- ✅ 프로덕션 빌드 검증 (`npm run build`)
+- ✅ 배포 (Vercel) — https://claude-code-mastery-ch25-event-mana.vercel.app
+- ✅ Supabase advisor 최종 점검 (보안/성능) — ERROR 0. WARN은 모두 의도된 설계(공개 RPC의 SECURITY DEFINER 노출, admin+host 분리 RLS의 multiple permissive policies). leaked-password-protection은 대시보드 설정 권장사항
+- ✅ 배포 환경 검증(Playwright) — 공개 RSVP 페이지 렌더, 정원 잔여 표시, **OG 한글 폰트가 Vercel(Linux)에서 임베딩 폰트로 정상 렌더**(폰트 임베딩 실효 확인), og/twitter 메타 채워짐
+
+> **발견된 후속 이슈(이번 범위 밖, 별도 수정 권장):**
+> - **타임존**: `Intl.DateTimeFormat`에 `timeZone` 미지정 → 서버(Vercel UTC) 기준 포맷. 한국 이벤트 시각이 9시간 어긋나 표시됨(예: KST 11:00 → "AM 2:00"). `timeZone: "Asia/Seoul"` 고정 필요.
+> - **metadataBase**: `layout.tsx`가 `VERCEL_URL`(배포별 고유 URL) 기반이라 og:image가 production alias가 아닌 deployment URL을 가리킴. `VERCEL_PROJECT_PRODUCTION_URL` 또는 고정 도메인 권장.
 
 ---
 
@@ -284,4 +289,4 @@
 | Phase 1 — 골격        | ✅   | 라우팅 + 타입 (주최자 + 관리자 역할) |
 | Phase 2 — UI/UX       | [~]  | 주최자·관리자 UI 완료, 카톡 인앱 점검만 남음 |
 | Phase 3 — DB/핵심     | ✅   | 스키마/RLS/RPC + CRUD·RSVP·공지 실연결 + mock 제거 완료. capacity 마감(P1)은 Phase 4에서 구현 완료 |
-| Phase 4 — 고급/최적화 | [~]  | 4.1·4.2 완료(+ 정원 마감·삭제 UI·OG 한글 폰트 임베딩·Lighthouse 측정 P94/A96/BP100/SEO82). 4.3 Vercel 배포만 남음 |
+| Phase 4 — 고급/최적화 | ✅   | 4.1·4.2·4.3 완료. Vercel 배포 + 배포 환경 검증(OG 한글 폰트 실효·advisor ERROR 0). 타임존·metadataBase는 후속 권장 |
