@@ -1,7 +1,18 @@
+import { readFile } from "node:fs/promises";
+import { join } from "node:path";
+
 import { ImageResponse } from "next/og";
 
 import { createClient } from "@/lib/supabase/server";
 import type { Announcement, Event, Rsvp } from "@/lib/types";
+
+// 폰트는 모듈 스코프에서 한 번만 로드한다. 컴포넌트 내부에서 readFile 하면
+// Cache Components 하에 동적 I/O로 취급되어 정적 생성에서 빠진다.
+// process.cwd()는 Next.js 프로젝트 디렉터리이며, 이 경로는 prod 빌드에서도 유효하다.
+const [notoBold, notoRegular] = await Promise.all([
+  readFile(join(process.cwd(), "assets/fonts/NotoSansKR-Bold.ttf")),
+  readFile(join(process.cwd(), "assets/fonts/NotoSansKR-Regular.ttf")),
+]);
 
 // get_public_event RPC 반환 형태 (page.tsx의 PublicEvent와 동일).
 interface PublicEvent {
@@ -53,6 +64,7 @@ export default async function Image({
           padding: "80px",
           background: "#0a0a0a",
           color: "#fafafa",
+          fontFamily: "Noto Sans KR",
         }}
       >
         <div style={{ fontSize: 32, color: "#a1a1aa" }}>{PRODUCT_NAME}</div>
@@ -73,6 +85,17 @@ export default async function Image({
         )}
       </div>
     ),
-    size,
+    {
+      ...size,
+      fonts: [
+        { name: "Noto Sans KR", data: notoBold, weight: 700, style: "normal" },
+        {
+          name: "Noto Sans KR",
+          data: notoRegular,
+          weight: 400,
+          style: "normal",
+        },
+      ],
+    },
   );
 }
