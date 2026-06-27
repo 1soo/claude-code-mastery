@@ -196,7 +196,7 @@
 - ✅ 공개 RSVP 페이지 메타데이터/OG 이미지 (카톡 공유 시 미리보기) — `e/[slug]` `generateMetadata`(og/twitter) + `opengraph-image.tsx`(ImageResponse 1200×630). 루트 metadata "모임 이벤트 관리"로 교체. Playwright: og 메타·OG 이미지 200/PNG 한글 렌더 확인
 - ✅ 서버 컴포넌트 우선, 클라이언트 컴포넌트 최소화 점검 — `'use client'` 22개 점검, 신규 UI는 서버 컴포넌트(error.tsx만 클라, 규약 필수), 나머지는 폼/Radix로 정당
 - ✅ 이미지/폰트 최적화, 불필요 리렌더 제거 — Geist `next/font`(display:swap) 적용, 일반 이미지 없음(OG만 ImageResponse)
-- [~] 검증: Lighthouse 모바일 점수 점검 — 현 환경 Chrome 제약으로 수동 체크리스트 대체. 정식 Lighthouse는 배포(4.3) 시점에 측정
+- ✅ 검증: Lighthouse 모바일 점수 점검 — 로컬 prod 서버(`npm run start`) + 시스템 Chrome으로 `/e/[slug]` 측정. **Performance 94 / Accessibility 96 / Best Practices 100 / SEO 82** (FCP 0.8s, LCP 2.8s, CLS 0). 개선 후보는 모두 보류: meta-description 0점은 오탐(초기 SSR HTML에 정상 존재 확인), robots.txt 0점은 robots.ts+proxy 공개경로 예외 동반 필요(인증 흐름 리스크로 별도 사안), color-contrast 1건(shadcn Badge 토큰, 전역 영향), JS 번들 항목은 프레임워크 영역
 
 ### 4.3 배포 및 모니터링
 
@@ -284,4 +284,4 @@
 | Phase 1 — 골격        | ✅   | 라우팅 + 타입 (주최자 + 관리자 역할) |
 | Phase 2 — UI/UX       | [~]  | 주최자·관리자 UI 완료, 카톡 인앱 점검만 남음 |
 | Phase 3 — DB/핵심     | ✅   | 스키마/RLS/RPC + CRUD·RSVP·공지 실연결 + mock 제거 완료. capacity 마감(P1)은 Phase 4에서 구현 완료 |
-| Phase 4 — 고급/최적화 | [~]  | 4.1·4.2 완료 + 정원 마감(P1)·삭제 UI 구현. Lighthouse 정식 측정 + 4.3 Vercel 배포만 남음 |
+| Phase 4 — 고급/최적화 | [~]  | 4.1·4.2 완료(+ 정원 마감·삭제 UI·OG 한글 폰트 임베딩·Lighthouse 측정 P94/A96/BP100/SEO82). 4.3 Vercel 배포만 남음 |
