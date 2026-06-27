@@ -32,6 +32,8 @@
 ## Phase 1 — 애플리케이션 골격 구축
 
 > 목표: 라우팅과 타입 뼈대를 세워, 이후 모든 작업이 올라갈 토대를 만든다.
+>
+> **역할 정의:** `주최자(host)` = 본인 이벤트를 생성·운영. `관리자(admin)` = 모든 이벤트를 집계하고 임의 이벤트의 상세를 **읽기 전용**으로 열람. 식별은 `profiles.role`(`'host' | 'admin'`)로 한다.
 
 ### 1.1 프로젝트 구조 및 라우팅 설정 (우선순위)
 
@@ -42,7 +44,10 @@
   - ✅ `app/events/[id]/page.tsx` — 주최자 이벤트 상세
   - ✅ `app/events/[id]/edit/page.tsx` — 이벤트 수정
   - ✅ `app/e/[slug]/page.tsx` — 공개 RSVP 페이지 (인증 불필요)
+  - ✅ `app/admin/page.tsx` — 관리자 대시보드 (전체 이벤트 집계, admin 전용 보호 라우트)
+  - ✅ `app/admin/events/[id]/page.tsx` — 관리자 이벤트 상세 (읽기 전용)
 - ✅ `proxy.ts`의 인증 리다이렉트 정책 확인: `/e/[slug]`가 **비로그인 접근 허용** 경로에 포함되는지 검증
+- ✅ `proxy.ts`: `/admin/*`가 보호 라우트인지 확인 (비공개 경로라 비로그인 시 `/auth/login` 리다이렉트; admin **role 체크**는 Phase 3)
 - ✅ 검증: 각 라우트가 200으로 렌더되고, 보호 라우트는 비로그인 시 `/auth/login`으로 리다이렉트
 
 ### 1.2 타입 정의 및 인터페이스 설계
@@ -53,6 +58,8 @@
   - ✅ `RsvpStatus` = `'going' | 'not_going' | 'maybe'`
   - ✅ `Announcement` (id, event_id, body, created_at)
   - ✅ 집계 뷰 타입 `EventSummary` (goingCount, notGoingCount, maybeCount, totalAttendees)
+  - ✅ `UserRole` = `'host' | 'admin'` (역할 구분)
+  - ✅ `Profile` (id, role: UserRole) — 사용자 역할 표현 (Phase 3 `profiles.role`과 정합)
 - ✅ Phase 3에서 `lib/database.types.ts` 재생성 후 도메인 타입과 정합성 맞추는 지점 표시
 - ✅ 검증: `npm run typecheck` 통과
 
@@ -60,7 +67,7 @@
 
 ## Phase 2 — UI/UX 완성 (더미 데이터 활용)
 
-> 목표: 백엔드 없이 더미 데이터로 모든 화면을 완성한다. 모바일 우선, 데스크톱은 관리 화면만.
+> 목표: 백엔드 없이 더미 데이터로 모든 화면을 완성한다. 모바일 우선, 데스크톱은 주최자·관리자 관리 화면.
 
 ### 2.1 공통 컴포넌트 라이브러리 구현
 
@@ -95,12 +102,24 @@
 - [ ] 카톡 인앱 브라우저 호환성 점검 (실제 인앱 환경 점검 대기)
 - ✅ 검증: 더미 데이터로 응답 → 완료 → 명단 반영(목업) 흐름 완결 (Playwright 육안 검증 완료: 제출→완료 패널→수정 토글 prefill 확인)
 
-### 2.4 관리자 데스크톱 페이지 UI/UX 완성
+### 2.4 주최자 데스크톱 이벤트 상세 UI/UX 완성
+
+> `/events/[id]` — **주최자 본인** 이벤트의 운영 화면 (수정·공지 작성·공유 가능). 관리자 화면(2.5)과 구분.
 
 - ✅ 주최자 이벤트 상세(데스크톱): 집계 요약 + 명단 테이블 + 공지 작성 영역 + 공유 링크
 - ✅ 명단 테이블: 이름 / 상태 / 동반 인원 / 응답 시각
 - ✅ 반응형: 모바일↔데스크톱 레이아웃 (`max-w-5xl`, `flex-col sm:flex-row`, 테이블 `overflow-x-auto`)
 - ✅ 검증: 더미 데이터로 집계/명단/공지 UI가 데스크톱에서 완결 (Playwright 육안 검증 완료: 공지 작성 다이얼로그 동작 확인)
+
+### 2.5 관리자(Admin) 데스크톱 UI/UX 완성
+
+> 목표: 관리자가 **모든 주최자의 모든 이벤트**를 집계·열람하는 **읽기 전용** 화면. 주최자 화면과 분리.
+
+- ✅ 더미 데이터 확장(`lib/mock-data.ts`): 복수 주최자(김주최/이모임)의 이벤트 추가. `mockEvents`는 본인 이벤트만, `getAllEvents()`로 합산 (대시보드 회귀 방지)
+- ✅ 관리자 대시보드 (`/admin`): 전체 이벤트 목록 + 전체 집계(이벤트 수 / 총 응답자 / 총 참석 인원)
+- ✅ 관리자 이벤트 상세 (`/admin/events/[id]`): 집계 요약 + 명단 테이블 (**읽기 전용** — 수정/공유/공지 작성 버튼 미노출)
+- ✅ 주최자 화면과 명확히 구분 ("관리자"·"읽기 전용" 배지, 관리 액션 없음, 전(全) 이벤트 접근)
+- ✅ 검증: 더미로 관리자가 여러 주최자의 모든 이벤트를 집계·열람하는 흐름이 데스크톱에서 완결 (Playwright: /admin 5개/15명/17명, /admin/events/[id] 타 주최자 이벤트 읽기 전용 확인; 주최자 대시보드 회귀 없음)
 
 ---
 
@@ -110,51 +129,52 @@
 
 ### 3.1 데이터베이스 스키마 및 Supabase 초기 설정
 
-- [ ] 마이그레이션 작성 (`supabase/migrations/`)
-  - [ ] `events` 테이블 (+ `slug` unique, `updated_at` 트리거)
-  - [ ] `rsvps` 테이블 (+ `status` enum, `party_size` default 1)
-  - [ ] `announcements` 테이블
-- [ ] `lib/database.types.ts` 재생성 (직접 편집 금지)
-- [ ] 검증: `mcp__supabase__get_advisors`로 보안/성능 경고 확인
+- ✅ 마이그레이션 작성 (`supabase/migrations/`) — MCP `apply_migration` 원격 적용 + 로컬 파일 동기
+  - ✅ `events` 테이블 (+ `slug` unique, `gen_event_slug()` default, `updated_at` 트리거)
+  - ✅ `rsvps` 테이블 (+ `status` enum, `party_size` default 1, `unique(event_id, guest_token)`)
+  - ✅ `announcements` 테이블
+  - ✅ `profiles.role`(`user_role` enum) 추가 + `is_admin()` 헬퍼 (역할 식별)
+- ✅ `lib/database.types.ts` 재생성 (직접 편집 금지)
+- ✅ 검증: `mcp__supabase__get_advisors`로 보안/성능 경고 확인 (RLS 미적용 경고 0, `gen_event_slug` search_path 보정; 잔여 6건은 공개 RPC·RLS 헬퍼의 의도된 SECURITY DEFINER 노출)
 
 ### 3.2 인증 시스템 및 권한 관리 (RLS)
 
-- [ ] RLS 정책
-  - [ ] `events`: 쓰기/수정/삭제는 `host_id = auth.uid()`
-  - [ ] `events` 공개 읽기: slug 기반 조회 전용 경로/RPC (직접 SELECT 제한)
-  - [ ] `rsvps`: 가입 없는 insert/update는 **slug 검증 Server Action/RPC** 경유만 허용
-  - [ ] `rsvps`: 주최자는 본인 이벤트 rsvp 전체 조회 가능
-  - [ ] `announcements`: 쓰기는 주최자, 읽기는 slug 보유자
-- [ ] 가입 없는 쓰기 어뷰징 방어: slug 검증 + rate limit
-- [ ] 검증: 비인가 사용자가 타인 이벤트 수정/조회 불가 (수동 시나리오 테스트)
+- ✅ RLS 정책
+  - ✅ `events`: 쓰기/수정/삭제는 `host_id = auth.uid()`
+  - ✅ `events` 공개 읽기: slug 기반 조회 전용 RPC `get_public_event` (직접 SELECT 정책 없음 → enumerate 차단)
+  - ✅ `rsvps`: 가입 없는 insert/update는 **slug 검증 RPC** `submit_rsvp` 경유만 허용 (anon insert/update 정책 없음)
+  - ✅ `rsvps`: 주최자는 본인 이벤트 rsvp 전체 조회 가능 + admin 전체 읽기(`is_admin()`)
+  - ✅ `announcements`: 쓰기는 주최자, 읽기는 slug 보유자(RPC) + admin 전체 읽기
+- ✅ 가입 없는 쓰기 어뷰징 방어: slug 검증 + guest_token 길이/입력 검증 + 2초 연타 가드 (IP/Redis rate limit은 Phase 4)
+- ✅ 검증: `submit_rsvp` upsert(행 1개)·`get_public_event` 민감필드(host_id/guest_token) 미노출 수동 시나리오 통과 (Server Action 배선은 3.3~3.4)
 
 ### 3.3 이벤트 CRUD 및 초대(공유 링크) 시스템
 
-- [ ] Server Action: 이벤트 생성/수정/삭제 (서버 클라이언트 `lib/supabase/server.ts` 사용)
-- [ ] `slug` 생성 로직 (추측 불가 토큰)
-- [ ] 공유 링크 발급 및 복사 기능 실연결
-- [ ] 검증: 생성한 이벤트가 DB에 저장되고 `/e/[slug]`로 접근됨
+- ✅ Server Action: 이벤트 생성/수정/삭제 (`app/events/actions.ts`, 서버 클라이언트 `lib/supabase/server.ts` 사용; 읽기 계층 `lib/queries.ts` 신설)
+- ✅ `slug` 생성 로직 (추측 불가 토큰 — `gen_event_slug()` DB default)
+- ✅ 공유 링크 발급 및 복사 기능 실연결 (`headers()`로 절대 URL 구성 → `ShareLinkButton`)
+- ✅ 검증: 생성한 이벤트가 DB에 저장되고 대시보드·상세·`/e/[slug]`로 접근됨 (Playwright E2E)
 
 ### 3.4 참여자 관리 (RSVP)
 
-- [ ] Server Action/RPC: slug 기반 RSVP insert/update
-- [ ] `guest_token` 쿠키 발급·식별 로직 (재방문 시 응답 수정)
-- [ ] 실시간 집계 쿼리: 응답자 수 + 총 참석 인원(`party_size` 합산)
-- [ ] 정원(capacity) 도달 시 처리 (P1: 마감/대기)
-- [ ] 검증: 비로그인 브라우저에서 RSVP → 명단·집계 반영 확인
+- ✅ Server Action/RPC: slug 기반 RSVP insert/update (`app/e/[slug]/actions.ts` → `submit_rsvp` RPC upsert)
+- ✅ `guest_token` 쿠키 발급·식별 로직 (httpOnly 1년, 재방문 시 `get_my_rsvp`로 prefill·수정)
+- ✅ 실시간 집계 쿼리: 응답자 수 + 총 참석 인원(`party_size` 합산) — `get_public_event` + `summarize`
+- [ ] 정원(capacity) 도달 시 처리 (P1: 마감/대기) — 현재 표시만, 마감/대기 미구현(Phase 4)
+- ✅ 검증: 비로그인 브라우저에서 RSVP → 명단·집계 반영, 재방문 prefill, 다중 게스트 분리 집계 확인 (Playwright E2E)
 
 ### 3.5 관리자 대시보드 백엔드 구현
 
-- [ ] 대시보드: 주최자 본인 이벤트 목록 실제 쿼리
-- [ ] 이벤트 상세: 집계·명단·공지 실제 데이터 바인딩
-- [ ] 공지 작성 Server Action
-- [ ] 검증: 더미 데이터 모듈(`lib/mock-data.ts`) 완전 제거
+- ✅ 대시보드: 주최자 본인 이벤트 목록 실제 쿼리 (`getMyEvents`)
+- ✅ 이벤트 상세: 집계·명단·공지 실제 데이터 바인딩 (host: `getEventForHost`, admin: `getEventDetailByIdAdmin`)
+- ✅ 공지 작성 Server Action (`createAnnouncement` → `AnnouncementComposer` 배선)
+- ✅ 검증: 더미 데이터 모듈(`lib/mock-data.ts`) 완전 제거 (코드 참조 0, build 통과)
 
 ### 3.6 핵심 기능 통합 테스트
 
-- [ ] 시나리오: 주최자 가입→이벤트 생성→링크 공유→참여자 RSVP→집계 확인→공지→참여자 공지 열람
-- [ ] 다중 기기/브라우저 응답 식별 검증
-- [ ] 검증: PRD North Star 흐름(RSVP 수집)이 끝까지 동작
+- ✅ 시나리오: 주최자 로그인→이벤트 생성→링크 공유→참여자 RSVP→집계 확인→공지→참여자 공지 열람 (Playwright + Supabase MCP)
+- ✅ 다중 기기/브라우저 응답 식별 검증 (서로 다른 `guest_token` → 응답 분리 집계, "내 응답"은 본인 것만)
+- ✅ 검증: PRD North Star 흐름(RSVP 수집)이 끝까지 동작; 검증 후 시드 데이터 전량 정리(0건 확인)
 
 ---
 
@@ -198,7 +218,7 @@
 | 아이콘      | lucide-react                           |                           |
 | 다크모드    | next-themes                            |                           |
 | 백엔드/DB   | Supabase (Postgres + Auth + RLS)       | `@supabase/ssr`           |
-| 인증        | 쿠키 기반 SSR (이메일 + Google OAuth)  | 주최자만 가입             |
+| 인증        | 쿠키 기반 SSR (이메일 + Google OAuth)  | 가입 사용자 역할: host/admin (`profiles.role`) |
 | 린트/포맷   | ESLint 9 (flat) + Prettier             | `eslint-config-next`      |
 | Git 훅      | Husky + lint-staged                    | pre-commit                |
 | 테스트 러너 | **미설정**                             | 수동 검증 + 통합 시나리오 |
@@ -260,7 +280,7 @@
 
 | Phase                 | 상태 | 비고          |
 | --------------------- | ---- | ------------- |
-| Phase 1 — 골격        | ✅   | 라우팅 + 타입 |
-| Phase 2 — UI/UX       | [~]  | 구현·육안 검증 완료, 카톡 인앱 점검만 남음 |
-| Phase 3 — DB/핵심     | [ ]  | Supabase 연동 |
+| Phase 1 — 골격        | ✅   | 라우팅 + 타입 (주최자 + 관리자 역할) |
+| Phase 2 — UI/UX       | [~]  | 주최자·관리자 UI 완료, 카톡 인앱 점검만 남음 |
+| Phase 3 — DB/핵심     | ✅   | 스키마/RLS/RPC + CRUD·RSVP·공지 실연결 + mock 제거 완료. capacity 마감/대기(P1)만 Phase 4로 이월 |
 | Phase 4 — 고급/최적화 | [ ]  | 출시 준비     |
