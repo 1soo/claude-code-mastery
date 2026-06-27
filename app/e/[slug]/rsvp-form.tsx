@@ -1,0 +1,147 @@
+"use client";
+
+import { useState } from "react";
+import { toast } from "sonner";
+
+import { RsvpStatusBadge } from "@/components/events/rsvp-status-badge";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import type { RsvpStatus } from "@/lib/types";
+
+// party_size는 "본인 포함" 인원 (AttendeeList가 +{party_size - 1}로 표시).
+// 동반 인원(+N)을 0~5로 받아 party_size = 1 + companions 로 저장 의미를 맞춘다.
+const COMPANION_OPTIONS = [0, 1, 2, 3, 4, 5];
+
+interface MyRsvp {
+  name: string;
+  status: RsvpStatus;
+  partySize: number; // 본인 포함
+}
+
+export function RsvpForm() {
+  const [submitted, setSubmitted] = useState<MyRsvp | null>(null);
+
+  // 폼 입력 상태
+  const [name, setName] = useState("");
+  const [status, setStatus] = useState<RsvpStatus>("going");
+  const [companions, setCompanions] = useState(0);
+
+  function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
+    e.preventDefault();
+    const trimmed = name.trim();
+    if (!trimmed) {
+      toast.error("이름을 입력해주세요.");
+      return;
+    }
+    setSubmitted({ name: trimmed, status, partySize: 1 + companions });
+    toast.success("응답이 저장되었습니다 (더미)");
+  }
+
+  function handleEdit() {
+    if (submitted) {
+      setName(submitted.name);
+      setStatus(submitted.status);
+      setCompanions(submitted.partySize - 1);
+    }
+    setSubmitted(null);
+  }
+
+  // 응답 완료 상태: 내 응답 요약 + 수정 버튼
+  if (submitted) {
+    const extra = submitted.partySize - 1;
+    return (
+      <div className="space-y-3 rounded-lg border p-4">
+        <p className="text-sm font-medium">내 응답</p>
+        <div className="flex flex-wrap items-center gap-2 text-sm">
+          <span className="font-semibold">{submitted.name}</span>
+          <RsvpStatusBadge status={submitted.status} />
+          {extra > 0 && (
+            <span className="text-muted-foreground">동반 +{extra}명</span>
+          )}
+        </div>
+        <Button type="button" variant="outline" onClick={handleEdit}>
+          응답 수정하기
+        </Button>
+      </div>
+    );
+  }
+
+  // 입력 폼
+  return (
+    <form onSubmit={handleSubmit} className="space-y-5 rounded-lg border p-4">
+      <div className="space-y-2">
+        <Label htmlFor="rsvp-name">이름 (닉네임 가능)</Label>
+        <Input
+          id="rsvp-name"
+          value={name}
+          onChange={(e) => setName(e.target.value)}
+          placeholder="예: 한강불주먹"
+          autoComplete="off"
+        />
+      </div>
+
+      <div className="space-y-2">
+        <Label>참석 여부</Label>
+        <RadioGroup
+          value={status}
+          onValueChange={(v) => setStatus(v as RsvpStatus)}
+        >
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="going" id="status-going" />
+            <Label htmlFor="status-going" className="font-normal">
+              참석
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="not_going" id="status-not_going" />
+            <Label htmlFor="status-not_going" className="font-normal">
+              불참
+            </Label>
+          </div>
+          <div className="flex items-center gap-2">
+            <RadioGroupItem value="maybe" id="status-maybe" />
+            <Label htmlFor="status-maybe" className="font-normal">
+              미정
+            </Label>
+          </div>
+        </RadioGroup>
+      </div>
+
+      <div className="space-y-2">
+        <Label htmlFor="rsvp-companions">동반 인원 (본인 외 추가 인원)</Label>
+        <Select
+          value={String(companions)}
+          onValueChange={(v) => setCompanions(Number(v))}
+        >
+          <SelectTrigger id="rsvp-companions" className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {COMPANION_OPTIONS.map((n) => (
+              <SelectItem key={n} value={String(n)}>
+                {n === 0 ? "나 혼자" : `+${n}명 동반`}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      <p className="text-xs text-muted-foreground">
+        입력한 이름이 참석자 명단에 공개됩니다.
+      </p>
+
+      <Button type="submit" className="w-full">
+        응답 제출
+      </Button>
+    </form>
+  );
+}
