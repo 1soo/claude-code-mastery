@@ -1,12 +1,14 @@
 "use client";
 
-import { useState, type FormEvent } from "react";
+import { useState, useTransition, type FormEvent } from "react";
+import { isRedirectError } from "next/dist/client/components/redirect-error";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import type { EventFormValues } from "@/app/events/actions";
 import type { Event } from "@/lib/types";
 
 /** ISO 8601 문자열을 datetime-local input 값(YYYY-MM-DDTHH:mm)으로 변환. */
@@ -24,9 +26,11 @@ function toDateTimeLocal(iso: string | undefined): string {
 export function EventForm({
   initialEvent,
   submitLabel = "저장",
+  onSubmitAction,
 }: {
   initialEvent?: Partial<Event>;
   submitLabel?: string;
+  onSubmitAction: (values: EventFormValues) => Promise<void>;
 }) {
   const [title, setTitle] = useState(initialEvent?.title ?? "");
   const [startsAt, setStartsAt] = useState(
@@ -40,11 +44,27 @@ export function EventForm({
   const [description, setDescription] = useState(
     initialEvent?.description ?? "",
   );
+  const [isPending, startTransition] = useTransition();
 
   function handleSubmit(e: FormEvent<HTMLFormElement>) {
     e.preventDefault();
-    // Phase 3 전: 실제 저장 없음.
-    toast.success("(더미) 저장되었습니다");
+    startTransition(async () => {
+      try {
+        await onSubmitAction({
+          title,
+          starts_at: startsAt,
+          ends_at: endsAt,
+          location,
+          capacity,
+          description,
+        });
+        // 성공 시 서버 액션이 redirect하므로 여기 이후 코드는 실행되지 않는다.
+      } catch (error) {
+        // redirect()는 throw로 전파된다 — 실패가 아니므로 다시 던져 Next가 처리하게 한다.
+        if (isRedirectError(error)) throw error;
+        toast.error("저장에 실패했습니다. 다시 시도해 주세요.");
+      }
+    });
   }
 
   return (
@@ -111,8 +131,8 @@ export function EventForm({
         />
       </div>
 
-      <Button type="submit" className="w-full">
-        {submitLabel}
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? "저장 중…" : submitLabel}
       </Button>
     </form>
   );

@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin, Users } from "lucide-react";
 
@@ -6,9 +7,20 @@ import { AnnouncementBanner } from "@/components/events/announcement-banner";
 import { AttendeeList } from "@/components/events/attendee-list";
 import { RsvpCounterSummary } from "@/components/events/rsvp-counter-summary";
 import { Separator } from "@/components/ui/separator";
-import { getEventDetailBySlug, getLatestAnnouncement } from "@/lib/mock-data";
+import { createClient } from "@/lib/supabase/server";
+import { summarize } from "@/lib/queries";
+import type { Announcement, Event, Rsvp } from "@/lib/types";
 
 import { RsvpForm } from "./rsvp-form";
+import { submitRsvp } from "./actions";
+import type { MyRsvp } from "./types";
+
+// get_public_event RPC 반환 형태 (event는 host_id 제거, rsvps는 guest_token 제외).
+interface PublicEvent {
+  event: Omit<Event, "host_id">;
+  announcements: Announcement[];
+  rsvps: Omit<Rsvp, "event_id" | "guest_token">[];
+}
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
@@ -37,11 +49,27 @@ export default function PublicRsvpPage({
 
 async function RsvpContent({ params }: { params: Promise<{ slug: string }> }) {
   const { slug } = await params;
-  const detail = getEventDetailBySlug(slug);
-  if (!detail) notFound();
+  const supabase = await createClient();
 
-  const { event, rsvps, summary } = detail;
-  const announcement = getLatestAnnouncement(event.id);
+  const { data, error } = await supabase.rpc("get_public_event", {
+    p_slug: slug,
+  });
+  if (error || !data) notFound();
+
+  const { event, announcements, rsvps } = data as unknown as PublicEvent;
+  const announcement = announcements[0] ?? null;
+  const summary = summarize(rsvps);
+
+  // guest_token 쿠키가 있으면 기존 응답을 조회해 폼을 prefill.
+  let initialRsvp: MyRsvp | null = null;
+  const guestToken = (await cookies()).get("guest_token")?.value;
+  if (guestToken) {
+    const { data: mine } = await supabase.rpc("get_my_rsvp", {
+      p_slug: slug,
+      p_guest_token: guestToken,
+    });
+    if (mine) initialRsvp = mine as unknown as MyRsvp;
+  }
 
   return (
     <div className="space-y-8">
@@ -79,7 +107,11 @@ async function RsvpContent({ params }: { params: Promise<{ slug: string }> }) {
       {/* 3. RSVP 폼 */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">참석 응답</h2>
-        <RsvpForm />
+        <RsvpForm
+          slug={slug}
+          submitRsvpAction={submitRsvp}
+          initialRsvp={initialRsvp}
+        />
       </section>
 
       <Separator />
@@ -88,7 +120,7 @@ async function RsvpContent({ params }: { params: Promise<{ slug: string }> }) {
       <section className="space-y-4">
         <h2 className="text-lg font-semibold">참석 현황</h2>
         <RsvpCounterSummary summary={summary} />
-        <AttendeeList rsvps={rsvps} />
+        <AttendeeList rsvps={rsvps as Rsvp[]} />
       </section>
     </div>
   );

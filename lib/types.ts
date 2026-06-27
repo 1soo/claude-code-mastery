@@ -39,3 +39,10 @@ export interface EventSummary {
   maybeCount: number;
   totalAttendees: number;
 }
+
+export type UserRole = "host" | "admin";
+
+export interface Profile {
+  id: string;
+  role: UserRole;
+}

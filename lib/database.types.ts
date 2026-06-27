@@ -14,11 +14,83 @@ export type Database = {
   }
   public: {
     Tables: {
+      announcements: {
+        Row: {
+          body: string
+          created_at: string
+          event_id: string
+          id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          event_id: string
+          id?: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          event_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "announcements_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      events: {
+        Row: {
+          capacity: number | null
+          created_at: string
+          description: string | null
+          ends_at: string
+          host_id: string
+          id: string
+          location: string | null
+          slug: string
+          starts_at: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          ends_at: string
+          host_id: string
+          id?: string
+          location?: string | null
+          slug?: string
+          starts_at: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          capacity?: number | null
+          created_at?: string
+          description?: string | null
+          ends_at?: string
+          host_id?: string
+          id?: string
+          location?: string | null
+          slug?: string
+          starts_at?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
           full_name: string | null
           id: string
+          role: Database["public"]["Enums"]["user_role"]
           updated_at: string
           username: string | null
         }
@@ -26,6 +98,7 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id: string
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string | null
         }
@@ -33,20 +106,72 @@ export type Database = {
           created_at?: string
           full_name?: string | null
           id?: string
+          role?: Database["public"]["Enums"]["user_role"]
           updated_at?: string
           username?: string | null
         }
         Relationships: []
+      }
+      rsvps: {
+        Row: {
+          created_at: string
+          event_id: string
+          guest_token: string
+          id: string
+          name: string
+          party_size: number
+          status: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Insert: {
+          created_at?: string
+          event_id: string
+          guest_token: string
+          id?: string
+          name: string
+          party_size?: number
+          status: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Update: {
+          created_at?: string
+          event_id?: string
+          guest_token?: string
+          id?: string
+          name?: string
+          party_size?: number
+          status?: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Relationships: [
+          {
+            foreignKeyName: "rsvps_event_id_fkey"
+            columns: ["event_id"]
+            isOneToOne: false
+            referencedRelation: "events"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      gen_event_slug: { Args: never; Returns: string }
+      get_public_event: { Args: { p_slug: string }; Returns: Json }
+      is_admin: { Args: never; Returns: boolean }
+      submit_rsvp: {
+        Args: {
+          p_guest_token: string
+          p_name: string
+          p_party_size: number
+          p_slug: string
+          p_status: Database["public"]["Enums"]["rsvp_status"]
+        }
+        Returns: Json
+      }
     }
     Enums: {
-      [_ in never]: never
+      rsvp_status: "going" | "not_going" | "maybe"
+      user_role: "host" | "admin"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -173,6 +298,9 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      rsvp_status: ["going", "not_going", "maybe"],
+      user_role: ["host", "admin"],
+    },
   },
 } as const

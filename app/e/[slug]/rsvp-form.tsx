@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { RsvpStatusBadge } from "@/components/events/rsvp-status-badge";
@@ -16,24 +16,33 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import type { RsvpStatus } from "@/lib/types";
+import type { MyRsvp } from "./types";
 
 // party_size는 "본인 포함" 인원 (AttendeeList가 +{party_size - 1}로 표시).
 // 동반 인원(+N)을 0~5로 받아 party_size = 1 + companions 로 저장 의미를 맞춘다.
 const COMPANION_OPTIONS = [0, 1, 2, 3, 4, 5];
 
-interface MyRsvp {
-  name: string;
-  status: RsvpStatus;
-  partySize: number; // 본인 포함
+interface RsvpFormProps {
+  slug: string;
+  submitRsvpAction: (
+    slug: string,
+    input: { name: string; status: RsvpStatus; companions: number },
+  ) => Promise<MyRsvp>;
+  initialRsvp: MyRsvp | null;
 }
 
-export function RsvpForm() {
-  const [submitted, setSubmitted] = useState<MyRsvp | null>(null);
+export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps) {
+  const [submitted, setSubmitted] = useState<MyRsvp | null>(initialRsvp);
+  const [isPending, startTransition] = useTransition();
 
-  // 폼 입력 상태
-  const [name, setName] = useState("");
-  const [status, setStatus] = useState<RsvpStatus>("going");
-  const [companions, setCompanions] = useState(0);
+  // 폼 입력 상태 (재방문 prefill).
+  const [name, setName] = useState(initialRsvp?.name ?? "");
+  const [status, setStatus] = useState<RsvpStatus>(
+    initialRsvp?.status ?? "going",
+  );
+  const [companions, setCompanions] = useState(
+    initialRsvp ? initialRsvp.party_size - 1 : 0,
+  );
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -42,22 +51,33 @@ export function RsvpForm() {
       toast.error("이름을 입력해주세요.");
       return;
     }
-    setSubmitted({ name: trimmed, status, partySize: 1 + companions });
-    toast.success("응답이 저장되었습니다 (더미)");
+    startTransition(async () => {
+      try {
+        const result = await submitRsvpAction(slug, {
+          name: trimmed,
+          status,
+          companions,
+        });
+        setSubmitted(result);
+        toast.success("응답이 저장되었습니다.");
+      } catch {
+        toast.error("응답 저장에 실패했어요. 잠시 후 다시 시도해주세요.");
+      }
+    });
   }
 
   function handleEdit() {
     if (submitted) {
       setName(submitted.name);
       setStatus(submitted.status);
-      setCompanions(submitted.partySize - 1);
+      setCompanions(submitted.party_size - 1);
     }
     setSubmitted(null);
   }
 
   // 응답 완료 상태: 내 응답 요약 + 수정 버튼
   if (submitted) {
-    const extra = submitted.partySize - 1;
+    const extra = submitted.party_size - 1;
     return (
       <div className="space-y-3 rounded-lg border p-4">
         <p className="text-sm font-medium">내 응답</p>
@@ -139,8 +159,8 @@ export function RsvpForm() {
         입력한 이름이 참석자 명단에 공개됩니다.
       </p>
 
-      <Button type="submit" className="w-full">
-        응답 제출
+      <Button type="submit" className="w-full" disabled={isPending}>
+        {isPending ? "제출 중…" : "응답 제출"}
       </Button>
     </form>
   );

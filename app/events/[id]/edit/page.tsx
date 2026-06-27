@@ -2,7 +2,8 @@ import { Suspense } from "react";
 import { notFound } from "next/navigation";
 
 import { EventForm } from "@/components/events/event-form";
-import { getEventById } from "@/lib/mock-data";
+import { updateEvent } from "@/app/events/actions";
+import { getEventForEdit } from "@/lib/queries";
 
 export default function EditEventPage({
   params,
@@ -23,11 +24,17 @@ export default function EditEventPage({
 
 async function EditEventForm({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const event = getEventById(id);
+  const event = await getEventForEdit(id);
 
   if (!event) {
     notFound();
   }
 
-  return <EventForm initialEvent={event} submitLabel="변경 저장" />;
+  return (
+    <EventForm
+      initialEvent={event}
+      submitLabel="변경 저장"
+      onSubmitAction={updateEvent.bind(null, id)}
+    />
+  );
 }

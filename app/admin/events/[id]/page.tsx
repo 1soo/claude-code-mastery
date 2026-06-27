@@ -1,11 +1,14 @@
 import { Suspense } from "react";
-import { headers } from "next/headers";
-import Link from "next/link";
 import { notFound } from "next/navigation";
-import { CalendarClock, MapPin, Megaphone, Pencil } from "lucide-react";
+import {
+  CalendarClock,
+  MapPin,
+  Megaphone,
+  ShieldCheck,
+  User,
+} from "lucide-react";
 
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { Separator } from "@/components/ui/separator";
 import {
   Table,
@@ -15,12 +18,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { AttendeeList } from "@/components/events/attendee-list";
 import { RsvpCounterSummary } from "@/components/events/rsvp-counter-summary";
 import { RsvpStatusBadge } from "@/components/events/rsvp-status-badge";
-import { ShareLinkButton } from "@/components/events/share-link-button";
-import { getEventForHost } from "@/lib/queries";
-
-import { AnnouncementComposer } from "./announcement-composer";
+import { getEventDetailByIdAdmin } from "@/lib/queries";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
@@ -32,7 +33,7 @@ const shortDateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeStyle: "short",
 });
 
-export default function EventDetailPage({
+export default function AdminEventDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>;
@@ -40,62 +41,54 @@ export default function EventDetailPage({
   return (
     <div className="mx-auto max-w-5xl p-5 pb-16">
       <Suspense fallback={<h1 className="text-2xl font-bold">이벤트 상세</h1>}>
-        <EventDetailContent params={params} />
+        <AdminEventDetailContent params={params} />
       </Suspense>
     </div>
   );
 }
 
-async function EventDetailContent({
+async function AdminEventDetailContent({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
   const { id } = await params;
-  const detail = await getEventForHost(id);
+  const detail = await getEventDetailByIdAdmin(id);
   if (!detail) notFound();
 
-  const { event, rsvps, announcements, summary } = detail;
-
-  const headerList = await headers();
-  const host = headerList.get("host");
-  const proto = headerList.get("x-forwarded-proto") ?? "http";
-  const shareUrl = host
-    ? `${proto}://${host}/e/${event.slug}`
-    : `/e/${event.slug}`;
+  const { event, hostName, rsvps, announcements, summary } = detail;
 
   return (
     <div className="space-y-8">
       {/* 헤더 */}
       <header className="space-y-4">
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
-          <div className="space-y-2">
-            <h1 className="text-2xl font-bold">{event.title}</h1>
-            <div className="space-y-1 text-sm text-muted-foreground">
-              <p className="flex items-center gap-1.5">
-                <CalendarClock className="size-4 shrink-0" />
-                <span>
-                  {dateTimeFormatter.format(new Date(event.starts_at))}
-                  {" ~ "}
-                  {shortDateTimeFormatter.format(new Date(event.ends_at))}
-                </span>
-              </p>
-              {event.location && (
-                <p className="flex items-center gap-1.5">
-                  <MapPin className="size-4 shrink-0" />
-                  <span>{event.location}</span>
-                </p>
-              )}
-            </div>
+        <div className="space-y-2">
+          <div className="flex items-center gap-2">
+            <Badge variant="secondary" className="gap-1">
+              <ShieldCheck className="size-3.5" />
+              관리자 · 읽기 전용
+            </Badge>
           </div>
-          <div className="flex shrink-0 gap-2">
-            <Button asChild variant="outline" size="sm">
-              <Link href={`/events/${event.id}/edit`}>
-                <Pencil className="size-4" />
-                수정
-              </Link>
-            </Button>
-            <ShareLinkButton url={shareUrl} className="h-9" />
+          <h1 className="text-2xl font-bold">{event.title}</h1>
+          <div className="space-y-1 text-sm text-muted-foreground">
+            <p className="flex items-center gap-1.5">
+              <User className="size-4 shrink-0" />
+              <span>주최자 {hostName}</span>
+            </p>
+            <p className="flex items-center gap-1.5">
+              <CalendarClock className="size-4 shrink-0" />
+              <span>
+                {dateTimeFormatter.format(new Date(event.starts_at))}
+                {" ~ "}
+                {shortDateTimeFormatter.format(new Date(event.ends_at))}
+              </span>
+            </p>
+            {event.location && (
+              <p className="flex items-center gap-1.5">
+                <MapPin className="size-4 shrink-0" />
+                <span>{event.location}</span>
+              </p>
+            )}
           </div>
         </div>
         {event.description && (
@@ -104,13 +97,8 @@ async function EventDetailContent({
       </header>
 
       {/* 집계 요약 */}
-      <section className="space-y-3">
+      <section>
         <RsvpCounterSummary summary={summary} />
-        <div className="grid grid-cols-3 gap-3">
-          <SummaryCard label="참석" value={summary.goingCount} />
-          <SummaryCard label="미정" value={summary.maybeCount} />
-          <SummaryCard label="불참" value={summary.notGoingCount} />
-        </div>
       </section>
 
       <Separator />
@@ -157,12 +145,17 @@ async function EventDetailContent({
 
       <Separator />
 
-      {/* 공지 */}
+      {/* 상태별 명단 */}
       <section className="space-y-3">
-        <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold">공지</h2>
-          <AnnouncementComposer eventId={event.id} />
-        </div>
+        <h2 className="text-lg font-semibold">상태별 명단</h2>
+        <AttendeeList rsvps={rsvps} />
+      </section>
+
+      <Separator />
+
+      {/* 공지 (읽기 전용 타임라인) */}
+      <section className="space-y-3">
+        <h2 className="text-lg font-semibold">공지</h2>
         {announcements.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             아직 등록된 공지가 없습니다.
@@ -189,20 +182,5 @@ async function EventDetailContent({
         )}
       </section>
     </div>
-  );
-}
-
-function SummaryCard({ label, value }: { label: string; value: number }) {
-  return (
-    <Card>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {label}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <p className="text-2xl font-bold">{value}명</p>
-      </CardContent>
-    </Card>
   );
 }

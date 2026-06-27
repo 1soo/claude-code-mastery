@@ -5,7 +5,7 @@ import { Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/events/event-card";
-import { getRsvpsByEventId, mockEvents, summarize } from "@/lib/mock-data";
+import { getMyEvents } from "@/lib/queries";
 
 export default function DashboardPage() {
   return (
@@ -41,10 +41,9 @@ export default function DashboardPage() {
 async function EventSections() {
   await connection();
   const now = Date.now();
-  const events = mockEvents.map((event) => ({
-    event,
-    summary: summarize(getRsvpsByEventId(event.id)),
-    isPast: new Date(event.ends_at).getTime() < now,
+  const events = (await getMyEvents()).map((row) => ({
+    ...row,
+    isPast: new Date(row.event.ends_at).getTime() < now,
   }));
 
   const upcoming = events.filter((e) => !e.isPast);
