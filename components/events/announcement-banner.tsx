@@ -5,6 +5,7 @@ import type { Announcement } from "@/lib/types";
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "medium",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 export function AnnouncementBanner({

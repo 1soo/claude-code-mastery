@@ -26,10 +26,12 @@ interface PublicEvent {
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 export async function generateMetadata({

@@ -11,6 +11,7 @@ import { getAllEventsAdmin, getGlobalSummary } from "@/lib/queries";
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 export default function AdminDashboardPage() {

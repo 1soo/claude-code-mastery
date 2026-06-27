@@ -27,6 +27,7 @@ export const contentType = "image/png";
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 const PRODUCT_NAME = "모임 이벤트 관리";

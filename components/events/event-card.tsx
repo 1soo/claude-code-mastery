@@ -14,6 +14,7 @@ import type { Event, EventSummary } from "@/lib/types";
 const dateFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 export function EventCard({

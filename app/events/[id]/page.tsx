@@ -27,11 +27,13 @@ import { DeleteEventButton } from "./delete-event-button";
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 const shortDateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "medium",
   timeStyle: "short",
+  timeZone: "Asia/Seoul",
 });
 
 export default function EventDetailPage({
