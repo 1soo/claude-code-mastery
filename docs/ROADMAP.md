@@ -206,9 +206,9 @@
 - ✅ Supabase advisor 최종 점검 (보안/성능) — ERROR 0. WARN은 모두 의도된 설계(공개 RPC의 SECURITY DEFINER 노출, admin+host 분리 RLS의 multiple permissive policies). leaked-password-protection은 대시보드 설정 권장사항
 - ✅ 배포 환경 검증(Playwright) — 공개 RSVP 페이지 렌더, 정원 잔여 표시, **OG 한글 폰트가 Vercel(Linux)에서 임베딩 폰트로 정상 렌더**(폰트 임베딩 실효 확인), og/twitter 메타 채워짐
 
-> **발견된 후속 이슈(이번 범위 밖, 별도 수정 권장):**
-> - **타임존**: `Intl.DateTimeFormat`에 `timeZone` 미지정 → 서버(Vercel UTC) 기준 포맷. 한국 이벤트 시각이 9시간 어긋나 표시됨(예: KST 11:00 → "AM 2:00"). `timeZone: "Asia/Seoul"` 고정 필요.
-> - **metadataBase**: `layout.tsx`가 `VERCEL_URL`(배포별 고유 URL) 기반이라 og:image가 production alias가 아닌 deployment URL을 가리킴. `VERCEL_PROJECT_PRODUCTION_URL` 또는 고정 도메인 권장.
+> **배포 후 발견 이슈 → 해소 완료:**
+> - ✅ **타임존**: 10개 `Intl.DateTimeFormat`에 `timeZone: "Asia/Seoul"` 고정. `TZ=UTC` 재현 환경에서 시각이 KST("오전 11:00")로 정상 표시 검증(이전 "AM 2:00").
+> - ✅ **metadataBase**: `layout.tsx`를 `VERCEL_PROJECT_PRODUCTION_URL` 기반으로 교체. og:image가 안정적 production 도메인 절대 URL을 가리킴(env 주입 검증). 재배포 시 적용됨.
 
 ---
 
