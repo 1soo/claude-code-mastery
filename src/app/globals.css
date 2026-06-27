@@ -137,6 +137,34 @@
 }
 
 @media print {
+  /* ── 인쇄 스코프 라이트 토큰 강제 (F010 다크모드 마감) ── */
+  /* 다크모드(.dark)가 켜진 상태로 인쇄해도 모든 테마 토큰을 라이트 값으로
+     해석시켜, 카드/배지/구분선 등 var(--*)를 쓰는 내부 요소가 어두운 배경으로
+     찍히지 않게 한다. :root 라이트 정의를 그대로 가져오되, 인쇄 가독성을 위해
+     muted-foreground만 약간 더 진하게(0.45) 둔다. 이 블록을 @media print 최상단에
+     두어 이후의 #fff/[data-print-area] 규칙과 상호 보완되게 한다. */
+  :root,
+  .dark {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.45 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.85 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+  }
+
   /* ── 화면 전용 요소 일괄 숨김 ── */
   /* Tailwind print:hidden 클래스 및 데이터 속성으로 명시된 비인쇄 요소 */
   .print\:hidden {

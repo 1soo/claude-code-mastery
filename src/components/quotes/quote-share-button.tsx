@@ -4,7 +4,7 @@ import { Copy } from "lucide-react";
 import { toast } from "sonner";
 
 import { Button } from "@/components/ui/button";
-import { siteConfig } from "@/config/site";
+import { buildShareUrl } from "@/lib/share";
 
 interface QuoteShareButtonProps {
   quoteId: string;
@@ -16,10 +16,11 @@ interface QuoteShareButtonProps {
 export function QuoteShareButton({ quoteId }: QuoteShareButtonProps) {
   async function handleCopy() {
     // 배포 도메인 자동 대응: 클라이언트 클릭 시점의 origin 사용(localhost/프로덕션 모두 정확).
-    // 비브라우저 경로 방어를 위해 siteConfig.url 폴백.
-    const origin =
-      typeof window !== "undefined" ? window.location.origin : siteConfig.url;
-    const shareUrl = `${origin}/quotes/${quoteId}`;
+    // 비브라우저 경로 방어를 위해 origin 미지정 시 siteConfig.url 폴백(buildShareUrl 내부 처리).
+    const shareUrl = buildShareUrl(
+      quoteId,
+      typeof window !== "undefined" ? window.location.origin : undefined,
+    );
 
     try {
       await navigator.clipboard.writeText(shareUrl);
