@@ -4,6 +4,7 @@ import { useState, useTransition } from "react";
 import { toast } from "sonner";
 
 import { RsvpStatusBadge } from "@/components/events/rsvp-status-badge";
+import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -29,9 +30,17 @@ interface RsvpFormProps {
     input: { name: string; status: RsvpStatus; companions: number },
   ) => Promise<MyRsvp>;
   initialRsvp: MyRsvp | null;
+  isFull: boolean;
+  remaining: number | null;
 }
 
-export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps) {
+export function RsvpForm({
+  slug,
+  submitRsvpAction,
+  initialRsvp,
+  isFull,
+  remaining,
+}: RsvpFormProps) {
   const [submitted, setSubmitted] = useState<MyRsvp | null>(initialRsvp);
   const [isPending, startTransition] = useTransition();
 
@@ -44,6 +53,10 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
     initialRsvp ? initialRsvp.party_size - 1 : 0,
   );
   const [nameError, setNameError] = useState<string | undefined>(undefined);
+
+  // 마감 시 going 잠금: 단, 본인이 이미 going으로 응답해 둔 경우는 수정 허용.
+  const alreadyGoing = initialRsvp?.status === "going";
+  const goingLocked = isFull && !alreadyGoing;
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
@@ -66,8 +79,13 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
         });
         setSubmitted(result);
         toast.success("응답이 저장되었습니다.");
-      } catch {
-        toast.error("응답 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.");
+      } catch (err) {
+        // 마감(서버 거절)은 그 사유를 그대로, 그 외는 일반 메시지.
+        const message =
+          err instanceof Error && err.message === "정원이 마감되었습니다"
+            ? "정원이 마감되었습니다."
+            : "응답 저장에 실패했습니다. 잠시 후 다시 시도해 주세요.";
+        toast.error(message);
       }
     });
   }
@@ -124,14 +142,28 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
       </div>
 
       <div className="space-y-2">
-        <Label>참석 여부</Label>
+        <div className="flex items-center gap-2">
+          <Label>참석 여부</Label>
+          {goingLocked && <Badge variant="secondary">마감되었습니다</Badge>}
+        </div>
+        {remaining !== null && !goingLocked && (
+          <p className="text-xs text-muted-foreground">남은 자리 {remaining}명</p>
+        )}
         <RadioGroup
           value={status}
           onValueChange={(v) => setStatus(v as RsvpStatus)}
         >
           <div className="flex items-center gap-2">
-            <RadioGroupItem value="going" id="status-going" />
-            <Label htmlFor="status-going" className="font-normal">
+            <RadioGroupItem
+              value="going"
+              id="status-going"
+              disabled={goingLocked}
+            />
+            <Label
+              htmlFor="status-going"
+              className="font-normal data-[disabled]:opacity-50"
+              data-disabled={goingLocked ? "" : undefined}
+            >
               참석
             </Label>
           </div>
@@ -173,7 +205,11 @@ export function RsvpForm({ slug, submitRsvpAction, initialRsvp }: RsvpFormProps)
         입력한 이름이 참석자 명단에 공개됩니다.
       </p>
 
-      <Button type="submit" className="w-full" disabled={isPending}>
+      <Button
+        type="submit"
+        className="w-full"
+        disabled={isPending || (goingLocked && status === "going")}
+      >
         {isPending ? "제출 중…" : "응답 제출"}
       </Button>
     </form>

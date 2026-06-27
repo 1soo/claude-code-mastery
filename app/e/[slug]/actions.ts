@@ -46,6 +46,11 @@ export async function submitRsvp(
   });
 
   if (error) {
+    // RPC가 raise한 '정원이 마감되었습니다'는 PostgrestError.message로 전달된다.
+    // 마감 메시지는 그대로 노출하고, 그 외에는 일반 메시지로 덮는다.
+    if (error.message.includes("정원이 마감되었습니다")) {
+      throw new Error("정원이 마감되었습니다");
+    }
     throw new Error("응답 저장에 실패했어요. 잠시 후 다시 시도해주세요.");
   }
 

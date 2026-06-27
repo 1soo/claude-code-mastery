@@ -96,6 +96,14 @@ async function RsvpContent({ params }: { params: Promise<{ slug: string }> }) {
   const announcement = announcements[0] ?? null;
   const summary = summarize(rsvps);
 
+  // 정원 마감 여부와 잔여 자리 (capacity가 null이면 무제한 → 마감 없음).
+  const isFull =
+    event.capacity !== null && summary.totalAttendees >= event.capacity;
+  const remaining =
+    event.capacity !== null
+      ? Math.max(0, event.capacity - summary.totalAttendees)
+      : null;
+
   // guest_token 쿠키가 있으면 기존 응답을 조회해 폼을 prefill.
   let initialRsvp: MyRsvp | null = null;
   const guestToken = (await cookies()).get("guest_token")?.value;
@@ -147,6 +155,8 @@ async function RsvpContent({ params }: { params: Promise<{ slug: string }> }) {
           slug={slug}
           submitRsvpAction={submitRsvp}
           initialRsvp={initialRsvp}
+          isFull={isFull}
+          remaining={remaining}
         />
       </section>
 
