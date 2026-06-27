@@ -1,10 +1,11 @@
 import { Suspense } from "react";
 import { connection } from "next/server";
 import Link from "next/link";
-import { Plus } from "lucide-react";
+import { CalendarPlus, Plus } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
 import { EventCard } from "@/components/events/event-card";
+import { EmptyState } from "@/components/events/empty-state";
 import { getMyEvents } from "@/lib/queries";
 
 export default function DashboardPage() {
@@ -51,9 +52,18 @@ async function EventSections() {
 
   if (events.length === 0) {
     return (
-      <p className="text-muted-foreground">
-        아직 만든 이벤트가 없습니다. 새 이벤트를 만들어 보세요.
-      </p>
+      <EmptyState
+        icon={CalendarPlus}
+        title="아직 만든 이벤트가 없습니다"
+        description="새 이벤트를 만들어 모임을 시작해 보세요."
+        action={
+          <Button asChild size="sm">
+            <Link href="/events/new">
+              <Plus className="size-4" />새 이벤트
+            </Link>
+          </Button>
+        }
+      />
     );
   }
 

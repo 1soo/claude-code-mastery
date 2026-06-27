@@ -5,6 +5,7 @@ import { CalendarDays, ShieldCheck, User } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { RsvpCounterSummary } from "@/components/events/rsvp-counter-summary";
+import { EmptyState } from "@/components/events/empty-state";
 import { getAllEventsAdmin, getGlobalSummary } from "@/lib/queries";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
@@ -58,32 +59,40 @@ async function AdminDashboardContent() {
       {/* 모든 주최자의 이벤트 목록 */}
       <section className="space-y-3">
         <h2 className="text-lg font-semibold">전체 이벤트</h2>
-        <ul className="space-y-3">
-          {events.map(({ event, hostName, summary: eventSummary }) => (
-            <li key={event.id}>
-              <Link href={`/admin/events/${event.id}`} className="block">
-                <Card className="transition-colors hover:bg-muted/50">
-                  <CardHeader className="pb-3">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <User className="size-4 shrink-0" />
-                      <span>{hostName}</span>
-                    </div>
-                    <CardTitle>{event.title}</CardTitle>
-                  </CardHeader>
-                  <CardContent className="space-y-2">
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <CalendarDays className="size-4 shrink-0" />
-                      <span>
-                        {dateTimeFormatter.format(new Date(event.starts_at))}
-                      </span>
-                    </div>
-                    <RsvpCounterSummary summary={eventSummary} />
-                  </CardContent>
-                </Card>
-              </Link>
-            </li>
-          ))}
-        </ul>
+        {events.length === 0 ? (
+          <EmptyState
+            icon={CalendarDays}
+            title="등록된 이벤트가 없습니다"
+            description="주최자가 이벤트를 만들면 여기에 표시됩니다."
+          />
+        ) : (
+          <ul className="space-y-3">
+            {events.map(({ event, hostName, summary: eventSummary }) => (
+              <li key={event.id}>
+                <Link href={`/admin/events/${event.id}`} className="block">
+                  <Card className="transition-colors hover:bg-muted/50">
+                    <CardHeader className="pb-3">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <User className="size-4 shrink-0" />
+                        <span>{hostName}</span>
+                      </div>
+                      <CardTitle>{event.title}</CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                        <CalendarDays className="size-4 shrink-0" />
+                        <span>
+                          {dateTimeFormatter.format(new Date(event.starts_at))}
+                        </span>
+                      </div>
+                      <RsvpCounterSummary summary={eventSummary} />
+                    </CardContent>
+                  </Card>
+                </Link>
+              </li>
+            ))}
+          </ul>
+        )}
       </section>
     </div>
   );
