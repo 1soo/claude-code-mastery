@@ -20,7 +20,9 @@ import { RsvpStatusBadge } from "@/components/events/rsvp-status-badge";
 import { ShareLinkButton } from "@/components/events/share-link-button";
 import { getEventForHost } from "@/lib/queries";
 
+import { deleteEvent } from "../actions";
 import { AnnouncementComposer } from "./announcement-composer";
+import { DeleteEventButton } from "./delete-event-button";
 
 const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
   dateStyle: "long",
@@ -96,6 +98,7 @@ async function EventDetailContent({
               </Link>
             </Button>
             <ShareLinkButton url={shareUrl} className="h-9" />
+            <DeleteEventButton eventId={event.id} deleteAction={deleteEvent} />
           </div>
         </div>
         {event.description && (
