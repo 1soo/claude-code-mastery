@@ -46,3 +46,6 @@ next-env.d.ts
 
 # playwright mcp 테스트 산출물 (스냅샷/콘솔 로그)
 /.playwright-mcp
+
+# 서브에이전트 내부 메모리 (버전 관리 대상 아님)
+/.claude/agent-memory
