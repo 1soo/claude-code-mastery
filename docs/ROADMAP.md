@@ -160,7 +160,7 @@
 - ✅ Server Action/RPC: slug 기반 RSVP insert/update (`app/e/[slug]/actions.ts` → `submit_rsvp` RPC upsert)
 - ✅ `guest_token` 쿠키 발급·식별 로직 (httpOnly 1년, 재방문 시 `get_my_rsvp`로 prefill·수정)
 - ✅ 실시간 집계 쿼리: 응답자 수 + 총 참석 인원(`party_size` 합산) — `get_public_event` + `summarize`
-- [ ] 정원(capacity) 도달 시 처리 (P1: 마감/대기) — 현재 표시만, 마감/대기 미구현(Phase 4)
+- ✅ 정원(capacity) 도달 시 처리 (P1: 마감) — submit_rsvp RPC capacity 체크(서버 강제) + 공개 RSVP 마감 배지·going 비활성. 대기(waitlist)는 범위 외(Phase 4에서 "마감만" 결정). Playwright+RPC 직접 호출로 거부 검증
 - ✅ 검증: 비로그인 브라우저에서 RSVP → 명단·집계 반영, 재방문 prefill, 다중 게스트 분리 집계 확인 (Playwright E2E)
 
 ### 3.5 관리자 대시보드 백엔드 구현
@@ -188,6 +188,7 @@
 - ✅ 토스트 알림(응답 완료, 복사 성공 등) — sonner 토스트 정중체 통일(RSVP/공지/복사/저장 실패). `deleteEvent`는 호출 UI 부재로 삭제 토스트 보류(삭제 UI 신설은 MVP 범위 외)
 - ✅ 폼 유효성 검증 및 친절한 에러 메시지 — event-form(제목/종료>시작/정원), rsvp-form(이름) 클라 인라인(aria-invalid) + Server Action 서버 재검증. Playwright: 종료<시작·빈 이름 차단 확인
 - ✅ 다크모드 점검 (next-themes) — 신규 UI 전부 muted/border 토큰만 사용, 다크모드 404 캡처로 대비 확인
+- ✅ 이벤트 삭제 UI — 상세 페이지 헤더에 AlertDialog 확인 다이얼로그 + 삭제 버튼(기존 deleteEvent 배선). Playwright: 다이얼로그→취소→확정→/dashboard 이동·DB 삭제 검증
 - [ ] (P2 후보) 동반 인원 마감 로직, 공지 이력 타임라인
 
 ### 4.2 성능 최적화 및 SEO
@@ -282,5 +283,5 @@
 | --------------------- | ---- | ------------- |
 | Phase 1 — 골격        | ✅   | 라우팅 + 타입 (주최자 + 관리자 역할) |
 | Phase 2 — UI/UX       | [~]  | 주최자·관리자 UI 완료, 카톡 인앱 점검만 남음 |
-| Phase 3 — DB/핵심     | ✅   | 스키마/RLS/RPC + CRUD·RSVP·공지 실연결 + mock 제거 완료. capacity 마감/대기(P1)만 Phase 4로 이월 |
-| Phase 4 — 고급/최적화 | [~]  | 4.1·4.2 완료(로딩/에러/빈상태·토스트·폼검증·다크모드·SEO/OG). Lighthouse 정식 측정 + 4.3 배포만 남음 |
+| Phase 3 — DB/핵심     | ✅   | 스키마/RLS/RPC + CRUD·RSVP·공지 실연결 + mock 제거 완료. capacity 마감(P1)은 Phase 4에서 구현 완료 |
+| Phase 4 — 고급/최적화 | [~]  | 4.1·4.2 완료 + 정원 마감(P1)·삭제 UI 구현. Lighthouse 정식 측정 + 4.3 Vercel 배포만 남음 |
