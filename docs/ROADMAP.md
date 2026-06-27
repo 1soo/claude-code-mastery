@@ -184,18 +184,18 @@
 
 ### 4.1 사용자 경험 향상
 
-- [ ] 로딩/에러/빈 상태(empty state) 처리
-- [ ] 토스트 알림(응답 완료, 복사 성공 등)
-- [ ] 폼 유효성 검증 및 친절한 에러 메시지
-- [ ] 다크모드 점검 (next-themes)
+- ✅ 로딩/에러/빈 상태(empty state) 처리 — `loading.tsx`×5(shadcn skeleton), `error.tsx`/`not-found.tsx`(전역) + `e/[slug]/not-found.tsx`(공개 전용), `EmptyState` 컴포넌트(대시보드 CTA·관리자 안내). Playwright: 공개/전역 404 표시, 빈 대시보드 EmptyState 확인
+- ✅ 토스트 알림(응답 완료, 복사 성공 등) — sonner 토스트 정중체 통일(RSVP/공지/복사/저장 실패). `deleteEvent`는 호출 UI 부재로 삭제 토스트 보류(삭제 UI 신설은 MVP 범위 외)
+- ✅ 폼 유효성 검증 및 친절한 에러 메시지 — event-form(제목/종료>시작/정원), rsvp-form(이름) 클라 인라인(aria-invalid) + Server Action 서버 재검증. Playwright: 종료<시작·빈 이름 차단 확인
+- ✅ 다크모드 점검 (next-themes) — 신규 UI 전부 muted/border 토큰만 사용, 다크모드 404 캡처로 대비 확인
 - [ ] (P2 후보) 동반 인원 마감 로직, 공지 이력 타임라인
 
 ### 4.2 성능 최적화 및 SEO
 
-- [ ] 공개 RSVP 페이지 메타데이터/OG 이미지 (카톡 공유 시 미리보기)
-- [ ] 서버 컴포넌트 우선, 클라이언트 컴포넌트 최소화 점검
-- [ ] 이미지/폰트 최적화, 불필요 리렌더 제거
-- [ ] 검증: Lighthouse 모바일 점수 점검
+- ✅ 공개 RSVP 페이지 메타데이터/OG 이미지 (카톡 공유 시 미리보기) — `e/[slug]` `generateMetadata`(og/twitter) + `opengraph-image.tsx`(ImageResponse 1200×630). 루트 metadata "모임 이벤트 관리"로 교체. Playwright: og 메타·OG 이미지 200/PNG 한글 렌더 확인
+- ✅ 서버 컴포넌트 우선, 클라이언트 컴포넌트 최소화 점검 — `'use client'` 22개 점검, 신규 UI는 서버 컴포넌트(error.tsx만 클라, 규약 필수), 나머지는 폼/Radix로 정당
+- ✅ 이미지/폰트 최적화, 불필요 리렌더 제거 — Geist `next/font`(display:swap) 적용, 일반 이미지 없음(OG만 ImageResponse)
+- [~] 검증: Lighthouse 모바일 점수 점검 — 현 환경 Chrome 제약으로 수동 체크리스트 대체. 정식 Lighthouse는 배포(4.3) 시점에 측정
 
 ### 4.3 배포 및 모니터링
 
@@ -283,4 +283,4 @@
 | Phase 1 — 골격        | ✅   | 라우팅 + 타입 (주최자 + 관리자 역할) |
 | Phase 2 — UI/UX       | [~]  | 주최자·관리자 UI 완료, 카톡 인앱 점검만 남음 |
 | Phase 3 — DB/핵심     | ✅   | 스키마/RLS/RPC + CRUD·RSVP·공지 실연결 + mock 제거 완료. capacity 마감/대기(P1)만 Phase 4로 이월 |
-| Phase 4 — 고급/최적화 | [ ]  | 출시 준비     |
+| Phase 4 — 고급/최적화 | [~]  | 4.1·4.2 완료(로딩/에러/빈상태·토스트·폼검증·다크모드·SEO/OG). Lighthouse 정식 측정 + 4.3 배포만 남음 |
