@@ -1,4 +1,5 @@
 import { Suspense } from "react";
+import type { Metadata } from "next";
 import { cookies } from "next/headers";
 import { notFound } from "next/navigation";
 import { CalendarDays, MapPin, Users } from "lucide-react";
@@ -30,6 +31,41 @@ const dateTimeFormatter = new Intl.DateTimeFormat("ko-KR", {
 const timeFormatter = new Intl.DateTimeFormat("ko-KR", {
   timeStyle: "short",
 });
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const supabase = await createClient();
+
+  const { data, error } = await supabase.rpc("get_public_event", {
+    p_slug: slug,
+  });
+  if (error || !data) {
+    return { title: "이벤트를 찾을 수 없습니다" };
+  }
+
+  const { event } = data as unknown as PublicEvent;
+  const title = event.title;
+  const description = event.description ?? "모임 참석 여부를 알려주세요.";
+
+  return {
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "website",
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+    },
+  };
+}
 
 export default function PublicRsvpPage({
   params,
