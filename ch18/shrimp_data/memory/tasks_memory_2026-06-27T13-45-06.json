@@ -1,0 +1,1097 @@
+{
+  "tasks": [
+    {
+      "id": "b46189af-268d-4359-a449-3404ae99a61b",
+      "name": "[Phase0-T1] 노션 v5 + dataSources.query 왕복 및 한글 보존 검증",
+      "description": "ROADMAP Phase 0 항목 1·2 통합. @notionhq/client v5 + notionVersion \"2025-09-03\" 조합이 이 프로젝트 런타임에서 동작함을 증명한다. (a) databases.retrieve로 data source ID를 확인하고, (b) dataSources.query({ data_source_id })를 1건 성공시키며, (c) 응답의 한글 plain_text가 깨지지 않고 보존되는지 확인한다. 검증 코드는 임시 dev 전용 API route(src/app/api/_verify/route.ts)로 작성하되 src/lib/notion.ts에서 export된 notion 클라이언트와 dataSourceId를 import해 사용하고, 검증 통과 후 route 파일을 삭제한다.",
+      "notes": "선결 차단 요인: .env.local 실값 미설정 시 즉시 실패 → 착수 전 env 확보 필요. 본 코드 무오염: 임시 route는 통과 후 반드시 삭제. notion.ts의 클라이언트를 재사용(신규 클라이언트 생성 금지).",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T20:38:08.383Z",
+      "updatedAt": "2026-06-22T21:31:37.470Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/notion.ts",
+          "type": "REFERENCE",
+          "description": "재사용할 notion 클라이언트·dataSourceId export 원본"
+        },
+        {
+          "path": ".env.example",
+          "type": "REFERENCE",
+          "description": "필요 env 키 정의(NOTION_TOKEN/NOTION_DATA_SOURCE_ID)"
+        },
+        {
+          "path": "src/app/api/_verify/route.ts",
+          "type": "CREATE",
+          "description": "임시 검증용 dev API route — 통과 후 삭제"
+        }
+      ],
+      "implementationGuide": "1) .env.local에 NOTION_TOKEN/NOTION_DATA_SOURCE_ID 실값 존재 확인(없으면 사용자에게 요청 후 중단). 2) 임시 파일 src/app/api/_verify/route.ts 생성: import { notion, dataSourceId } from '@/lib/notion'. GET 핸들러에서 await notion.dataSources.query({ data_source_id: dataSourceId, page_size: 1 }) 호출. 3) databases.query 사용 금지(규칙). data source ID는 env 고정값 사용(필요 시 databases.retrieve로 data_sources[] 확인은 1회 허용). 4) npm run dev 후 /api/_verify 호출 → 200 + results 1건 + 한글 title/rich_text plain_text 콘솔/응답에서 깨짐 없음 확인. 5) 통과 근거(응답 일부·스크린샷/로그) 기록 후 route 파일 삭제. pseudocode: GET(){ const r = await notion.dataSources.query({data_source_id:dataSourceId,page_size:1}); return Response.json({ok:true, sample:r.results[0]}) }",
+      "verificationCriteria": "/api/_verify 호출 시 dataSources.query 200 응답 + results 최소 1건. 응답 내 한글 title/rich_text plain_text가 깨짐 없이 보존됨. databases.query 미사용·notionVersion 2025-09-03 확인. 검증 근거 기록 후 임시 route 삭제 완료.",
+      "analysisResult": "견적서 관리/공유 웹앱 MVP(docs/PRD.md, docs/ROADMAP.md)의 Phase 0 \"착수 전 기술 검증\". 목적: 본격 구현(Phase 1+)을 막을 수 있는 기술 리스크를 코드 작성 전에 제거하는 게이트. 스택: Next.js 16 App Router/React 19.2/TS strict/Tailwind v4/shadcn-ui, @notionhq/client v5, react-to-print, reactCompiler:true. 제약(shrimp-rules.md): databases.query 금지·dataSources.query 사용, notionVersion \"2025-09-03\" 고정, 노션 호출은 src/lib/notion.ts에만·import \"server-only\" 유지, 시크릿은 env(NOTION_TOKEN/NOTION_DATA_SOURCE_ID)만·하드코딩 금지, 클라이언트에서 @notionhq/client import 금지. Phase 0 검증 코드는 임시(dev API route 또는 scratchpad)로 격리 후 삭제하여 본 코드를 오염시키지 않는다. DoD: P0 항목 전부 통과 + 견적 항목 저장 방식(A/B) 확정 문서화. 모든 작업은 한국어 문서/주석.",
+      "summary": "T1 통과. 임시 dev route(src/app/api/verify/route.ts, notion.ts의 notion·dataSourceId 재사용)로 검증. @notionhq/client v5 + notionVersion 2025-09-03에서 dataSources.retrieve+query 정상 동작(databases.query 미사용 규칙 준수). 진단 중 .env.local의 NOTION_DATA_SOURCE_ID에 database ID가 들어간 문제를 발견 → databases.retrieve의 data_sources[]에서 실제 data source ID(387de2a3-846c-80a4-97a2-000bf4b4b3f7, name invoices) 추출해 교정 후 query 성공. 한글 보존: 스키마 응답의 한글 프로퍼티명 완벽 보존으로 UTF-8 왕복 입증. 단 DB 데이터 0건이라 견적 행 기반 plain_text는 행 추가 후 Phase 2 재확인(ROADMAP 인계). 임시 route 삭제 완료(본 코드 무오염). 함정: _verify(언더스코어) 폴더 라우팅 제외 → verify로 교정.",
+      "completedAt": "2026-06-22T21:31:37.467Z"
+    },
+    {
+      "id": "c0783f44-a31b-4104-8290-cef264a1b233",
+      "name": "[Phase0-T2] 노션 DB 스키마(9개 프로퍼티)·상태 select 매핑 검증",
+      "description": "ROADMAP Phase 0 항목 6. PRD 데이터 모델의 9개 프로퍼티(제목/견적번호/고객명/고객이메일/발행일/유효기간/합계금액/상태/메모)가 실제 노션 DB에 동일 이름·타입으로 존재하는지 확인하고, 노션 프로퍼티명 ↔ 코드 매핑 키 표를 작성한다. 특히 상태 select 옵션값(발행/검토중/승인/만료)이 src/lib/types.ts의 QuoteStatus(issued/reviewing/approved/expired) 및 quoteStatusLabel과 1:1로 매핑되는지 검증한다.",
+      "notes": "신규 매핑 정의가 아니라 기존 types.ts 기준과 실제 DB의 일치 검증이 핵심. T1 응답 데이터를 재사용하므로 추가 API 호출 최소화.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "b46189af-268d-4359-a449-3404ae99a61b"
+        }
+      ],
+      "createdAt": "2026-06-22T20:38:08.383Z",
+      "updatedAt": "2026-06-22T21:31:51.000Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/types.ts",
+          "type": "REFERENCE",
+          "description": "QuoteStatus/quoteStatusLabel 기준 매핑"
+        },
+        {
+          "path": "docs/PRD.md",
+          "type": "REFERENCE",
+          "description": "데이터 모델 9개 프로퍼티·select 옵션 정의(120~178행)"
+        },
+        {
+          "path": "docs/summary.md",
+          "type": "TO_MODIFY",
+          "description": "프로퍼티명↔코드 매핑표·불일치 노트 기록처(또는 ROADMAP)"
+        }
+      ],
+      "implementationGuide": "1) T1의 dataSources.query 또는 dataSources.retrieve 응답의 properties 객체에서 프로퍼티명·type을 추출. 2) PRD 9개 프로퍼티(제목=title, 고객이메일=email, 발행일/유효기간=date, 합계금액=number, 상태=select, 메모/견적번호/고객명=title 외 rich_text 등)와 이름·타입 대조표 작성. 3) 상태 select의 실제 옵션 한글값 목록을 추출해 quoteStatusLabel(발행/검토중/승인/만료)과 대조 → 불일치 옵션이 있으면 매핑 보강 항목으로 기록. 4) 결과를 프로퍼티명↔코드 매핑표로 docs(summary.md 또는 ROADMAP)에 기록. 불일치 발견 시 normalizeQuote 매핑 키 조정 필요 사항을 Phase 1 인계 노트로 남긴다.",
+      "verificationCriteria": "9개 프로퍼티의 실제 노션 이름·타입이 PRD와 일치함을 확인(불일치 시 목록화). 상태 select 옵션 4종이 quoteStatusLabel과 매핑됨을 확인. 프로퍼티명↔코드 매핑표 문서화 완료. Phase 1 normalizeQuote 인계 노트 작성.",
+      "analysisResult": "견적서 관리/공유 웹앱 MVP(docs/PRD.md, docs/ROADMAP.md)의 Phase 0 \"착수 전 기술 검증\". 목적: 본격 구현(Phase 1+)을 막을 수 있는 기술 리스크를 코드 작성 전에 제거하는 게이트. 스택: Next.js 16 App Router/React 19.2/TS strict/Tailwind v4/shadcn-ui, @notionhq/client v5, react-to-print, reactCompiler:true. 제약(shrimp-rules.md): databases.query 금지·dataSources.query 사용, notionVersion \"2025-09-03\" 고정, 노션 호출은 src/lib/notion.ts에만·import \"server-only\" 유지, 시크릿은 env(NOTION_TOKEN/NOTION_DATA_SOURCE_ID)만·하드코딩 금지, 클라이언트에서 @notionhq/client import 금지. Phase 0 검증 코드는 임시(dev API route 또는 scratchpad)로 격리 후 삭제하여 본 코드를 오염시키지 않는다. DoD: P0 항목 전부 통과 + 견적 항목 저장 방식(A/B) 확정 문서화. 모든 작업은 한국어 문서/주석.",
+      "summary": "T2 통과. dataSources.retrieve 스키마로 9개 프로퍼티 전부 존재 확인. 중대 발견: 제목=rich_text, 견적번호=title로 PRD 가정(제목=title/견적번호=rich_text)과 타입이 반대(노션 필수 title 프로퍼티를 견적번호로 사용). 나머지 7필드 일치 — 고객명=rich_text, 고객 이메일=email(공백 포함), 발행일/유효기간=date, 합계금액=number, 메모=rich_text. 상태 select 옵션 4종(발행/검토중/승인/만료) 모두 quoteStatusLabel·QuoteStatus와 1:1 매핑 확인(노션 표시순서만 만료/승인/검토중/발행). 산출물: 매핑 단일소스 src/lib/notion-schema.ts(NOTION_PROP·NOTION_PROP_TYPE·STATUS_FROM_NOTION, 빌드 통과) + 구조 가이드 docs/notion-schema.md. Phase 1 normalizeQuote 인계: NOTION_PROP_TYPE에 따라 title→quoteNumber, rich_text 제목→title 추출.",
+      "completedAt": "2026-06-22T21:31:50.995Z"
+    },
+    {
+      "id": "282cea74-7c54-4ebd-8757-5b932dcf5c8d",
+      "name": "[Phase0-T3] window.print() 한글 인쇄 + React Compiler×react-to-print 호환 검증",
+      "description": "ROADMAP Phase 0 항목 3·4 통합. reactCompiler:true 환경에서 react-to-print(useReactToPrint)를 쓰는 클라이언트 컴포넌트가 빌드·런타임 모두 정상인지, 그리고 인쇄 미리보기에서 한글·통화(₩)·테이블 정렬이 정상 표시되는지 확인한다. 노션 검증(T1)과 완전 병렬 가능(노션 무관, 더미 데이터 사용).",
+      "notes": "Phase 5에서 정식 PrintButton·@media print를 구현하므로 여기서는 최소 스모크만. 본 코드 무오염: 더미 화면은 임시. \"use no memo\" 필요 여부를 명확히 기록하는 것이 핵심 산출물.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T20:38:08.383Z",
+      "updatedAt": "2026-06-22T20:47:36.569Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/quotes/[id]/page.tsx",
+          "type": "REFERENCE",
+          "description": "더미 상세 화면 골격 참고"
+        },
+        {
+          "path": "src/components/ui/table.tsx",
+          "type": "REFERENCE",
+          "description": "항목 테이블 렌더링 재사용"
+        },
+        {
+          "path": "next.config.ts",
+          "type": "REFERENCE",
+          "description": "reactCompiler:true 설정 확인"
+        }
+      ],
+      "implementationGuide": "1) 더미 견적 상세 화면(하드코딩 Quote 1건 + ui/table 항목표 + ₩ 금액 + 한글 텍스트)을 임시로 구성(기존 quotes/[id]/page.tsx 골격 + ui/table/ui/badge 재사용). 2) 임시 클라이언트 컴포넌트 PrintButton(\"use client\")에서 useReactToPrint로 본문 ref 인쇄 트리거. 3) npm run dev 인쇄 미리보기(Ctrl+P/버튼)로 한글·₩·테이블 우측정렬(tabular-nums) 정상 확인. 4) npm run build로 React Compiler 빌드 통과 확인. 런타임 오류 발생 시 컴포넌트 최상단 \"use no memo\"; 적용 후 재확인하고 결과를 기록(Phase 5 인계). 5) 검증 후 더미/임시 컴포넌트는 제거하거나 Phase 5 인계로 명시.",
+      "verificationCriteria": "인쇄 미리보기에서 한글·₩·테이블 정렬 정상 표시. npm run build(React Compiler) 무오류 + useReactToPrint 컴포넌트 런타임 정상. \"use no memo\" 필요 여부 명확히 기록. 임시 더미/컴포넌트 정리 또는 Phase 5 인계 명시.",
+      "analysisResult": "견적서 관리/공유 웹앱 MVP(docs/PRD.md, docs/ROADMAP.md)의 Phase 0 \"착수 전 기술 검증\". 목적: 본격 구현(Phase 1+)을 막을 수 있는 기술 리스크를 코드 작성 전에 제거하는 게이트. 스택: Next.js 16 App Router/React 19.2/TS strict/Tailwind v4/shadcn-ui, @notionhq/client v5, react-to-print, reactCompiler:true. 제약(shrimp-rules.md): databases.query 금지·dataSources.query 사용, notionVersion \"2025-09-03\" 고정, 노션 호출은 src/lib/notion.ts에만·import \"server-only\" 유지, 시크릿은 env(NOTION_TOKEN/NOTION_DATA_SOURCE_ID)만·하드코딩 금지, 클라이언트에서 @notionhq/client import 금지. Phase 0 검증 코드는 임시(dev API route 또는 scratchpad)로 격리 후 삭제하여 본 코드를 오염시키지 않는다. DoD: P0 항목 전부 통과 + 견적 항목 저장 방식(A/B) 확정 문서화. 모든 작업은 한국어 문서/주석.",
+      "summary": "T3(인쇄+React Compiler 호환) 검증 전 항목 통과. (1) npm run build: reactCompiler:true + useReactToPrint(react-to-print v3.3.0, contentRef API) 빌드·TypeScript 무오류, /verify-print 정적 생성. (2) 런타임: Playwright로 /verify-print 접속, 콘솔 에러 0건, 인쇄 버튼 클릭 후에도 0건 → \"use no memo\" 불필요(중요 결론). (3) 렌더링: 한글 텍스트 정상 보존, ₩ 통화(Intl ko-KR) 정상, 테이블 text-right+tabular-nums 정렬 적용, 합계 ₩7,450,000 계산 정확. (4) print:hidden 클래스 적용 확인(Phase 5 @media print 토대). 본 코드 무오염: 임시 src/app/verify-print 및 .playwright-mcp 산출물 삭제 완료. Phase 5 인계: 정식 PrintButton은 contentRef 패턴 사용, \"use no memo\" 불요 확인됨.",
+      "completedAt": "2026-06-22T20:47:36.563Z"
+    },
+    {
+      "id": "beccd0b8-a35a-40ec-81e5-37b5da30862b",
+      "name": "[Phase0-T4] 견적 항목 저장 방식(A: JSON 코드 블록 / B: 테이블 블록) 확정 및 문서화",
+      "description": "ROADMAP Phase 0 항목 5 — 가장 중요한 의사결정 게이트. 견적 항목(QuoteItem[])을 노션에 저장하는 방식을 방식 A(JSON 코드 블록, 권장, 1회 조회+JSON.parse) vs 방식 B(테이블 블록, 2단계 조회 ≈ 3 API 호출, 비개발자 편집 친화) 중 하나로 확정하고, 선택 근거와 Phase 1 파서 구현 방향을 문서화한다. 이 결정은 Phase 1 항목 파서의 유일한 선행 블로커다.",
+      "notes": "코드 의존성 없음 → 즉시 착수 가능. 사용자 의사결정이 필수이며, 결정 전까지 Phase 1 파서 구현은 블록된다. 결정 문서는 영구 산출물.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T20:38:08.383Z",
+      "updatedAt": "2026-06-22T21:32:03.606Z",
+      "relatedFiles": [
+        {
+          "path": "docs/PRD.md",
+          "type": "REFERENCE",
+          "description": "항목 저장 방식 A/B 정의 및 방식 B 주의사항(142~147행)"
+        },
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "미해결 질문 1번 해소·결정 기록"
+        },
+        {
+          "path": "src/lib/types.ts",
+          "type": "REFERENCE",
+          "description": "QuoteItem 구조(name/quantity/unitPrice/amount/note)"
+        }
+      ],
+      "implementationGuide": "1) AskUserQuestion으로 운영자 편집 시나리오 확인: '운영자가 노션 UI에서 항목을 직접 표로 편집'→방식 B / '앱·스크립트가 항목을 채워넣음(또는 JSON 편집 가능)'→방식 A. 기본 권장은 A. 2) 결정에 따른 파서 방향 기록: A=본문 code 블록 1회 조회→JSON.parse→스키마 가드; B=page children→table children 2단계 조회, has_column_header 첫 행 제외, 헤더 텍스트 기반 동적 열 매핑(인덱스 금지), 숫자 문자열(\"₩1,000\")→콤마/통화기호 제거+NaN 가드. 3) docs/ROADMAP.md '미해결 질문 1번'을 해소 처리하고 결정·근거를 기록(또는 docs에 decision 노트).",
+      "verificationCriteria": "방식 A/B 중 1개가 운영자 시나리오 근거와 함께 확정됨. Phase 1 파서 구현 방향(조회 절차·가드)이 문서화됨. docs/ROADMAP.md 미해결 질문 1번이 해소 상태로 갱신됨.",
+      "analysisResult": "견적서 관리/공유 웹앱 MVP(docs/PRD.md, docs/ROADMAP.md)의 Phase 0 \"착수 전 기술 검증\". 목적: 본격 구현(Phase 1+)을 막을 수 있는 기술 리스크를 코드 작성 전에 제거하는 게이트. 스택: Next.js 16 App Router/React 19.2/TS strict/Tailwind v4/shadcn-ui, @notionhq/client v5, react-to-print, reactCompiler:true. 제약(shrimp-rules.md): databases.query 금지·dataSources.query 사용, notionVersion \"2025-09-03\" 고정, 노션 호출은 src/lib/notion.ts에만·import \"server-only\" 유지, 시크릿은 env(NOTION_TOKEN/NOTION_DATA_SOURCE_ID)만·하드코딩 금지, 클라이언트에서 @notionhq/client import 금지. Phase 0 검증 코드는 임시(dev API route 또는 scratchpad)로 격리 후 삭제하여 본 코드를 오염시키지 않는다. DoD: P0 항목 전부 통과 + 견적 항목 저장 방식(A/B) 확정 문서화. 모든 작업은 한국어 문서/주석.",
+      "summary": "T4 통과. AskUserQuestion으로 운영자 편집 시나리오를 확인해 방식 A(JSON 코드 블록)로 확정. 근거: 구조 고정으로 가장 견고 + 견적 1건당 API 1회(블록 1회 조회+JSON.parse)로 비용 최소. 방식 B(테이블 블록, 2단계 조회 ≈3 API 호출, 열 순서 변경 취약)는 MVP 범위 제외. Phase 1 파서 구현 방향을 docs/ROADMAP.md에 문서화: code 블록 rich_text[].plain_text 이어붙임→JSON.parse→QuoteItem 스키마 가드(amount는 quantity×unitPrice 보정, note 선택)→try/catch 빈배열 fallback+에러 로깅→단위 테스트 케이스(정상/깨진 JSON/빈 본문/amount 누락/숫자 경계). docs/ROADMAP.md 미해결 질문 1번을 ✅ 해소 상태로 갱신 완료.",
+      "completedAt": "2026-06-22T21:32:03.599Z"
+    },
+    {
+      "id": "d7c7314a-07da-4778-8e07-bb528707584a",
+      "name": "[Phase0-T5] Phase 0 종료 검증·문서화 및 Phase 1 게이트 선언",
+      "description": "ROADMAP Phase 0 DoD 충족 확인. T1~T4의 통과 근거를 집계하고, 6개 체크 항목 전부 통과 + 견적 항목 저장 방식 확정 문서화를 확인한 뒤 Phase 1 착수 게이트 통과를 선언한다. 임시 검증 코드(_verify route, 더미 화면 등)가 모두 제거되어 본 코드가 오염되지 않았는지 최종 확인한다.",
+      "notes": "게이트 작업: T1~T4 전부 완료가 선행. 통과/미통과를 명확히 판정해야 하며, 임시 코드 잔여 여부 점검이 무오염 원칙의 마지막 방어선.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "b46189af-268d-4359-a449-3404ae99a61b"
+        },
+        {
+          "taskId": "c0783f44-a31b-4104-8290-cef264a1b233"
+        },
+        {
+          "taskId": "282cea74-7c54-4ebd-8757-5b932dcf5c8d"
+        },
+        {
+          "taskId": "beccd0b8-a35a-40ec-81e5-37b5da30862b"
+        }
+      ],
+      "createdAt": "2026-06-22T20:38:08.383Z",
+      "updatedAt": "2026-06-22T21:32:40.930Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 0 체크박스 갱신·게이트 통과 기록"
+        },
+        {
+          "path": "docs/summary.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 0 종료 요약·Phase 1 착수 선언"
+        }
+      ],
+      "implementationGuide": "1) ROADMAP Phase 0 6개 체크박스를 통과 근거와 함께 [x]로 갱신. 2) 임시 산출물 제거 확인: src/app/api/_verify/route.ts 삭제됨, T3 더미 화면/컴포넌트 정리됨(또는 Phase 5 인계 명시), git status로 의도치 않은 잔여 파일 없음 확인. 3) 영구 산출물 정합 확인: 스키마 매핑표(T2)·항목 저장 방식 결정(T4)이 docs에 반영됨. 4) Phase 0 게이트 통과 요약을 docs/summary.md 또는 ROADMAP에 기록하고 Phase 1 착수 가능 선언. 미통과 항목이 있으면 게이트 미통과로 명시하고 블로커를 나열.",
+      "verificationCriteria": "ROADMAP Phase 0 6개 항목 모두 통과 근거와 함께 체크됨. 견적 항목 저장 방식 확정 문서화 확인됨. 임시 검증 코드 전부 제거(본 코드 무오염) 확인. Phase 1 착수 게이트 통과(또는 블로커 명시) 선언 완료.",
+      "analysisResult": "견적서 관리/공유 웹앱 MVP(docs/PRD.md, docs/ROADMAP.md)의 Phase 0 \"착수 전 기술 검증\". 목적: 본격 구현(Phase 1+)을 막을 수 있는 기술 리스크를 코드 작성 전에 제거하는 게이트. 스택: Next.js 16 App Router/React 19.2/TS strict/Tailwind v4/shadcn-ui, @notionhq/client v5, react-to-print, reactCompiler:true. 제약(shrimp-rules.md): databases.query 금지·dataSources.query 사용, notionVersion \"2025-09-03\" 고정, 노션 호출은 src/lib/notion.ts에만·import \"server-only\" 유지, 시크릿은 env(NOTION_TOKEN/NOTION_DATA_SOURCE_ID)만·하드코딩 금지, 클라이언트에서 @notionhq/client import 금지. Phase 0 검증 코드는 임시(dev API route 또는 scratchpad)로 격리 후 삭제하여 본 코드를 오염시키지 않는다. DoD: P0 항목 전부 통과 + 견적 항목 저장 방식(A/B) 확정 문서화. 모든 작업은 한국어 문서/주석.",
+      "summary": "T5 통과 — Phase 0 게이트 통과 선언 완료. (1) ROADMAP Phase 0 6개 체크박스 전부 통과 근거와 함께 [x] 갱신(한글 왕복은 데이터 0건으로 부분 통과 — 인코딩 입증, 행 기반은 Phase 2 인계). (2) 무오염 최종 확인: git status·find로 임시 검증 코드(src/app/api/verify, src/app/verify-print, .playwright-mcp) 전부 삭제 확인 — src 본 코드 변경 0건. (3) 영구 산출물 정합: 매핑 src/lib/notion-schema.ts(빌드 통과), 가이드 docs/notion-schema.md, 저장 방식 결정·미해결 질문1 해소(ROADMAP), Phase 0 종료 요약(summary.md) 반영. (4) Phase 1 착수 게이트 통과 선언 + 인계 3건(normalizeQuote 타입 추출/방식 A 파서/견적 행 추가 후 재확인) 기록. DoD 충족: 6개 통과 + 방식 A 확정 문서화.",
+      "completedAt": "2026-06-22T21:32:40.925Z"
+    },
+    {
+      "id": "4fd4b047-fefa-4b05-98e6-241030b96e8f",
+      "name": "[Phase1-T1] vitest 테스트 환경 도입 및 설정",
+      "description": "프로젝트에 vitest 단위 테스트 환경을 도입한다. Phase 1~2의 모든 단위 테스트의 선행 인프라다. @/* 경로 별칭이 테스트에서 해석되어야 하며, Next 16/React 19/reactCompiler 빌드와 독립적으로 동작해야 한다.",
+      "notes": "vitest는 dev 의존성으로 Next 빌드에 영향 없음. server-only import 모듈의 테스트 가능성을 반드시 확인(필요 시 vitest alias로 server-only를 no-op 처리).",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T21:54:39.616Z",
+      "updatedAt": "2026-06-22T21:58:10.248Z",
+      "relatedFiles": [
+        {
+          "path": "package.json",
+          "type": "TO_MODIFY",
+          "description": "devDep + test 스크립트 추가"
+        },
+        {
+          "path": "tsconfig.json",
+          "type": "REFERENCE",
+          "description": "@/* → src/* 경로 별칭 기준"
+        },
+        {
+          "path": "vitest.config.ts",
+          "type": "CREATE",
+          "description": "vitest 설정(alias/environment)"
+        }
+      ],
+      "implementationGuide": "1) devDependencies에 vitest, @vitejs/plugin-react(또는 vite-tsconfig-paths) 추가(npm i -D). 2) vitest.config.ts 생성: test.environment 'node'(순수 함수 대상), @/* alias를 tsconfig 경로(src/*)에 맞게 해석(vite-tsconfig-paths 플러그인 권장). 3) package.json scripts에 \"test\": \"vitest run\", \"test:watch\": \"vitest\" 추가. 4) src/lib/__tests__/fixtures/ 디렉토리 생성(빈 상태로 두고 후속 작업이 채움). 5) 더미 테스트 1개(sanity.test.ts)로 npm test 통과 확인 후 더미는 제거 또는 유지 명시. server-only를 import하는 모듈을 테스트할 때 vitest에서 server-only가 throw하지 않도록 alias로 빈 모듈 처리하거나, 테스트 대상 순수 함수를 server-only 비의존 모듈에 두는 전략 확인.",
+      "verificationCriteria": "npm test 실행 시 vitest가 구동되고 더미/샘플 테스트가 통과한다. @/* import가 테스트에서 정상 해석된다. Next 빌드(npm run build)에 영향이 없다.",
+      "analysisResult": "견적서 웹앱 MVP Phase 1(노션 연동 기반 — 정규화 레이어, F004). 노션 응답을 Quote/QuoteItem으로 변환하는 순수 함수 레이어 + vitest 단위 테스트. 입력: Phase 0 산출 src/lib/notion-schema.ts(NOTION_PROP/NOTION_PROP_TYPE: 견적번호=title·제목=rich_text swap / STATUS_FROM_NOTION), 방식 A(JSON 코드 블록) 확정. 제약: 노션 호출은 notion.ts에만·server-only·dataSources.query·2025-09-03, 매핑 하드코딩 금지, strict null 가드, 단위 테스트는 fixture 기반(실 API 비의존), 한국어 주석. 기능 개발은 nextjs-app-router-dev 서브에이전트 위임, 전체 테스트 통과가 Phase 2 게이트.",
+      "summary": "T1 통과. nextjs-app-router-dev 서브에이전트가 vitest 환경 도입. vitest ^4.1.9 + vite-tsconfig-paths ^6.1.1(@/* 해석) devDep 설치. vitest.config.ts: environment node, globals true, resolve.alias로 server-only→no-op 셰임(test/shims/server-only.ts) 매핑해 notion.ts 테스트 가능하게 처리(Next 빌드 무영향). package.json scripts test/test:watch 추가. sanity.test.ts(@/lib/utils cn 검증, 유지) + fixtures/ 디렉토리. 메인 검증: npm test 2 passed, npm run build 무오류. 기존 코드 무변경.",
+      "completedAt": "2026-06-22T21:58:10.245Z"
+    },
+    {
+      "id": "93123952-427c-4290-af90-fc32fe325dc9",
+      "name": "[Phase1-T2] normalizeQuote 정규화 함수 + 추출 헬퍼 구현 및 단위 테스트",
+      "description": "노션 page(PageObjectResponse)를 앱 Quote 타입으로 변환하는 normalizeQuote와 프로퍼티 추출 헬퍼를 src/lib/notion.ts에 구현한다. notion-schema.ts의 NOTION_PROP/NOTION_PROP_TYPE/STATUS_FROM_NOTION을 통해서만 프로퍼티에 접근한다(하드코딩 금지). 견적번호=title·제목=rich_text swap을 NOTION_PROP_TYPE 기준으로 정확히 처리한다.",
+      "notes": "server-only import 때문에 테스트가 막히면 추출 헬퍼/normalizeQuote를 server-only 비의존 모듈(예: src/lib/normalize.ts)로 분리하고 notion.ts가 re-export하는 구조 고려(T1에서 확인한 전략 적용).",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "4fd4b047-fefa-4b05-98e6-241030b96e8f"
+        }
+      ],
+      "createdAt": "2026-06-22T21:54:39.616Z",
+      "updatedAt": "2026-06-22T22:04:41.278Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/notion.ts",
+          "type": "TO_MODIFY",
+          "description": "normalizeQuote 스텁→구현"
+        },
+        {
+          "path": "src/lib/notion-schema.ts",
+          "type": "DEPENDENCY",
+          "description": "NOTION_PROP/NOTION_PROP_TYPE/STATUS_FROM_NOTION 매핑"
+        },
+        {
+          "path": "src/lib/types.ts",
+          "type": "DEPENDENCY",
+          "description": "Quote/QuoteStatus 타입"
+        },
+        {
+          "path": "src/lib/__tests__/normalize.test.ts",
+          "type": "CREATE",
+          "description": "정규화 단위 테스트"
+        }
+      ],
+      "implementationGuide": "1) src/lib/notion.ts의 normalizeQuote 주석 스텁을 실제 구현으로 대체(items는 빈 배열로 두고 T3 파서가 채우거나, 시그니처를 normalizeQuote(page, items=[])로). 2) 추출 헬퍼: readPlainText(rich[])=rich.map(t=>t.plain_text).join(''), getProp(page, code필드)=page.properties[NOTION_PROP[code]], 타입별 reader(title/rich_text→readPlainText+fallback, email→email??null, number→number??null, date→date?.start??null, select→STATUS_FROM_NOTION[select?.name]??null). 3) Quote 매핑: title=rich_text '제목'(빈→'제목 없음'), quoteNumber=title '견적번호'(빈→''), clientName, clientEmail, issuedAt, expiresAt, totalAmount, status, memo(빈→''), id=page.id, items 주입. strict 가드 필수. 4) @notionhq/client v5 타입 가드(p.type==='...'). 5) 단위 테스트 src/lib/__tests__/normalize.test.ts + fixtures: (a)전필드정상 (b)제목 빈 배열→'제목 없음' (c)email/number/date/select null (d)status 미선택→null (e)한글 plain_text 보존. fixture는 실제 노션 properties 구조 준수.",
+      "verificationCriteria": "normalizeQuote가 fixture page를 Quote로 변환. 5개 케이스(정상/빈 제목 fallback/널 필드/status null/한글 보존) 테스트 통과. 매핑은 notion-schema.ts 경유, 하드코딩 없음. title↔rich_text swap 정확 처리. npm test 통과.",
+      "analysisResult": "견적서 웹앱 MVP Phase 1(노션 연동 기반 — 정규화 레이어, F004). 노션 응답을 Quote/QuoteItem으로 변환하는 순수 함수 레이어 + vitest 단위 테스트. 입력: Phase 0 산출 src/lib/notion-schema.ts(NOTION_PROP/NOTION_PROP_TYPE: 견적번호=title·제목=rich_text swap / STATUS_FROM_NOTION), 방식 A(JSON 코드 블록) 확정. 제약: 노션 호출은 notion.ts에만·server-only·dataSources.query·2025-09-03, 매핑 하드코딩 금지, strict null 가드, 단위 테스트는 fixture 기반(실 API 비의존), 한국어 주석. 기능 개발은 nextjs-app-router-dev 서브에이전트 위임, 전체 테스트 통과가 Phase 2 게이트.",
+      "summary": "T2 통과. normalizeQuote(page, items=[]): Quote를 src/lib/normalize.ts(server-only 비의존 순수 모듈)에 구현, notion.ts가 re-export. NOTION_PROP/NOTION_PROP_TYPE/STATUS_FROM_NOTION 통해서만 접근(하드코딩 없음), 견적번호=title→quoteNumber·제목=rich_text→title swap 정확 처리. 헬퍼 readPlainText/readTextProp/readEmailProp/readNumberProp/readDateProp/readStatusProp. @notionhq/client v5 union 타입 가드 + strict null 가드(미입력→null, 빈 제목→'제목 없음', 빈 견적번호/고객명/메모→''). normalize.test.ts 8케이스(전필드/items주입/빈제목 fallback/널필드/status null/매핑밖 null/한글 보존·조각 이어붙이기) 통과. npm test 33/33, build 무오류.",
+      "completedAt": "2026-06-22T22:04:41.270Z"
+    },
+    {
+      "id": "811a1644-3fd1-4669-a7a0-508fe51b1ad1",
+      "name": "[Phase1-T3] 견적 항목 파서 parseQuoteItems(방식 A) 구현 및 단위 테스트",
+      "description": "노션 페이지 본문 blocks에서 JSON 코드 블록(방식 A)을 찾아 QuoteItem[]로 파싱하는 순수 함수 parseQuoteItems(blocks: BlockObjectResponse[])를 구현한다. 본문 조회(notion.blocks.children.list)는 Phase 2에서 수행하므로, 파서는 blocks 배열을 입력받는 순수 함수로 둔다.",
+      "notes": "blocks 조회 자체는 하지 않음(Phase 2 getQuote가 호출해 blocks를 넘김). 파서는 입력 기반 순수 함수라 fixture로 완전 검증 가능. isQuoteItem/coerceItem 가드 함수로 분리해 재사용.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "4fd4b047-fefa-4b05-98e6-241030b96e8f"
+        }
+      ],
+      "createdAt": "2026-06-22T21:54:39.616Z",
+      "updatedAt": "2026-06-22T22:04:53.193Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/notion.ts",
+          "type": "TO_MODIFY",
+          "description": "parseQuoteItems 추가(또는 normalize.ts 동거)"
+        },
+        {
+          "path": "src/lib/types.ts",
+          "type": "DEPENDENCY",
+          "description": "QuoteItem 타입"
+        },
+        {
+          "path": "src/lib/__tests__/items.test.ts",
+          "type": "CREATE",
+          "description": "항목 파서 단위 테스트"
+        }
+      ],
+      "implementationGuide": "1) parseQuoteItems(blocks): type==='code' 첫 블록의 code.rich_text[].plain_text를 이어붙여 JSON 문자열 확보. 2) JSON.parse → 배열 가드(Array.isArray). 3) 각 항목 coerce/guard: name=string(없으면 스킵 또는 ''), quantity=Number, unitPrice=Number, amount=Number(없거나 NaN이면 quantity*unitPrice로 보정), note=string|undefined. 4) try/catch로 깨진 JSON·빈 본문·code 블록 없음 → 빈 배열 [] 반환 + console.error/warn 로깅(상세 페이지가 깨지지 않도록). 5) 단위 테스트 src/lib/__tests__/items.test.ts: 정상 다건 / 깨진 JSON→[] / 빈 본문→[] / code 블록 없음→[] / amount 누락→보정 / 숫자 0·음수 경계 / note 선택 누락. fixture는 노션 code 블록 구조(block.type==='code', code.rich_text[]) 준수.",
+      "verificationCriteria": "정상 JSON→QuoteItem[] 변환, amount 누락 시 quantity*unitPrice 보정, 깨진 JSON/빈 본문/code 블록 없음→[] fallback, 숫자 경계 처리. 테스트 케이스 전부 통과. npm test 통과.",
+      "analysisResult": "견적서 웹앱 MVP Phase 1(노션 연동 기반 — 정규화 레이어, F004). 노션 응답을 Quote/QuoteItem으로 변환하는 순수 함수 레이어 + vitest 단위 테스트. 입력: Phase 0 산출 src/lib/notion-schema.ts(NOTION_PROP/NOTION_PROP_TYPE: 견적번호=title·제목=rich_text swap / STATUS_FROM_NOTION), 방식 A(JSON 코드 블록) 확정. 제약: 노션 호출은 notion.ts에만·server-only·dataSources.query·2025-09-03, 매핑 하드코딩 금지, strict null 가드, 단위 테스트는 fixture 기반(실 API 비의존), 한국어 주석. 기능 개발은 nextjs-app-router-dev 서브에이전트 위임, 전체 테스트 통과가 Phase 2 게이트.",
+      "summary": "T3 통과. parseQuoteItems(blocks: BlockObjectResponse[]): QuoteItem[]를 normalize.ts에 순수 함수로 구현(노션 호출 없음, Phase 2 getQuote가 blocks 주입). 첫 code 블록의 rich_text[].plain_text 이어붙임→JSON.parse→Array.isArray 가드→coerceQuoteItem(name=String, quantity/unitPrice=Number, amount 없거나 NaN이면 quantity*unitPrice 보정, note는 문자열일 때만). try/catch로 깨진 JSON·비배열·빈 본문·code 없음·빈 blocks 모두 []+console.error 처리. items.test.ts 12케이스(정상 다건/조각 이어붙이기/깨진 JSON/비배열/빈 본문/code 없음/빈 blocks/amount 누락 보정/amount NaN 보정/0·음수 경계/note 비문자열 생략/첫 code 블록만) 통과. npm test 33/33, build 무오류.",
+      "completedAt": "2026-06-22T22:04:53.185Z"
+    },
+    {
+      "id": "c6f99636-cd72-49c8-8e41-e1a925d2ef81",
+      "name": "[Phase1-T4] 금액 포맷·계산 유틸 format.ts 구현 및 단위 테스트",
+      "description": "견적 금액 표시/계산용 유틸을 신규 src/lib/format.ts에 구현한다. Intl을 직접 사용하며(바퀴 재발명 금지), utils.ts(cn 전용)와 분리한다.",
+      "notes": "Phase 4 상세 페이지·Phase 3 카드에서 재사용되는 표시 유틸. utils.ts에 섞지 말고 format.ts로 분리.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "4fd4b047-fefa-4b05-98e6-241030b96e8f"
+        }
+      ],
+      "createdAt": "2026-06-22T21:54:39.616Z",
+      "updatedAt": "2026-06-22T22:05:10.059Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/format.ts",
+          "type": "CREATE",
+          "description": "formatKRW/calcAmount 등 금액 유틸"
+        },
+        {
+          "path": "src/lib/__tests__/format.test.ts",
+          "type": "CREATE",
+          "description": "금액 유틸 단위 테스트"
+        }
+      ],
+      "implementationGuide": "1) src/lib/format.ts 생성: formatKRW(value: number|null|undefined): string — Intl.NumberFormat('ko-KR',{style:'currency',currency:'KRW'}).format(value), null/undefined→'-'. calcAmount(quantity:number, unitPrice:number):number = quantity*unitPrice. 필요 시 sumAmount(items):number. 2) 단위 테스트 src/lib/__tests__/format.test.ts: formatKRW(1500000)→'₩1,500,000', 0→'₩0', null→'-', 음수 처리, calcAmount 검산. ko-KR 통화 포맷 정확성 확인.",
+      "verificationCriteria": "formatKRW가 ₩ ko-KR 포맷 출력, null→'-', 0·음수 처리. calcAmount 검산 정확. 테스트 전부 통과. npm test 통과.",
+      "analysisResult": "견적서 웹앱 MVP Phase 1(노션 연동 기반 — 정규화 레이어, F004). 노션 응답을 Quote/QuoteItem으로 변환하는 순수 함수 레이어 + vitest 단위 테스트. 입력: Phase 0 산출 src/lib/notion-schema.ts(NOTION_PROP/NOTION_PROP_TYPE: 견적번호=title·제목=rich_text swap / STATUS_FROM_NOTION), 방식 A(JSON 코드 블록) 확정. 제약: 노션 호출은 notion.ts에만·server-only·dataSources.query·2025-09-03, 매핑 하드코딩 금지, strict null 가드, 단위 테스트는 fixture 기반(실 API 비의존), 한국어 주석. 기능 개발은 nextjs-app-router-dev 서브에이전트 위임, 전체 테스트 통과가 Phase 2 게이트.",
+      "summary": "T4 통과. src/lib/format.ts 신규 구현(utils.ts cn과 분리). formatKRW(number|null|undefined): Intl.NumberFormat('ko-KR', currency KRW) 인스턴스 모듈 1회 생성 재사용, null/undefined→'-'. calcAmount(q,u)=q*u. sumAmount(items: {amount}[]) 구조적 타입(QuoteItem[] 호환). format.test.ts 12케이스: formatKRW 1500000→₩1,500,000 / 0→₩0 / -1000→-₩1,000 / null·undefined→'-', calcAmount 검산·경계, sumAmount 합산·빈배열. 외부 라이브러리 없이 Intl만. npm test 33/33 통과, build 무오류.",
+      "completedAt": "2026-06-22T22:05:10.054Z"
+    },
+    {
+      "id": "b0926b87-a91f-49c1-8afe-415c99a23699",
+      "name": "[Phase1-T5] Phase 1 검증 게이트 — 전체 테스트 통과·빌드·ROADMAP 체크·커밋",
+      "description": "Phase 1 DoD 충족 확인 후 게이트 통과를 선언한다. 전체 vitest 단위 테스트 통과 + Next 빌드 무오류를 확인하고, ROADMAP.md Phase 1 체크박스를 토글(체크 표시만)한 뒤 git commit한다.",
+      "notes": "이 작업은 메인 세션이 수행(서브에이전트 위임 아님). ROADMAP은 체크박스만 토글. 커밋 메시지 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "93123952-427c-4290-af90-fc32fe325dc9"
+        },
+        {
+          "taskId": "811a1644-3fd1-4669-a7a0-508fe51b1ad1"
+        },
+        {
+          "taskId": "c6f99636-cd72-49c8-8e41-e1a925d2ef81"
+        }
+      ],
+      "createdAt": "2026-06-22T21:54:39.616Z",
+      "updatedAt": "2026-06-22T22:06:43.005Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 1 체크박스 토글"
+        },
+        {
+          "path": "package.json",
+          "type": "REFERENCE",
+          "description": "test/build 스크립트"
+        }
+      ],
+      "implementationGuide": "1) npm test로 normalize/items/format 단위 테스트 전부 통과 확인. 2) npm run build로 TypeScript strict + React Compiler 빌드 무오류 확인. 3) docs/ROADMAP.md Phase 1 체크박스([ ]→[x])만 토글(다른 내용 추가 금지 — ROADMAP 오염 금지 규칙). 4) git:commit 스킬로 Phase 1 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외). 미통과 시 게이트 미통과로 명시하고 블로커 나열.",
+      "verificationCriteria": "npm test 전체 통과 + npm run build 무오류. ROADMAP Phase 1 체크박스 [x] 토글(다른 변경 없음). Phase 1 산출물 커밋 완료. Phase 2 게이트 통과 선언.",
+      "analysisResult": "견적서 웹앱 MVP Phase 1(노션 연동 기반 — 정규화 레이어, F004). 노션 응답을 Quote/QuoteItem으로 변환하는 순수 함수 레이어 + vitest 단위 테스트. 입력: Phase 0 산출 src/lib/notion-schema.ts(NOTION_PROP/NOTION_PROP_TYPE: 견적번호=title·제목=rich_text swap / STATUS_FROM_NOTION), 방식 A(JSON 코드 블록) 확정. 제약: 노션 호출은 notion.ts에만·server-only·dataSources.query·2025-09-03, 매핑 하드코딩 금지, strict null 가드, 단위 테스트는 fixture 기반(실 API 비의존), 한국어 주석. 기능 개발은 nextjs-app-router-dev 서브에이전트 위임, 전체 테스트 통과가 Phase 2 게이트.",
+      "summary": "T5 게이트 통과 — Phase 1 완료. npm test 33/33 통과(normalize 8 + items 12 + format 12 + sanity 1), npm run build 무오류(TS strict + React Compiler). docs/ROADMAP.md Phase 1 체크박스 7개([ ]→[x]) 토글, 다른 내용 변경 없음(오염 금지 규칙 준수). git commit 1a58d60(✨ feat: Phase 1 노션 정규화 레이어)로 산출물 커밋(.mcp.json/shrimp_data/agent-memory 제외, .env.local gitignore). Phase 2(getQuotes/getQuote fetch) 게이트 통과 선언. Phase 1은 순수 데이터 레이어로 UI 없음 → ui-markup-specialist 단계는 Phase 3/4부터 적용.",
+      "completedAt": "2026-06-22T22:06:42.998Z"
+    },
+    {
+      "id": "d0263289-2f97-4dfe-b9bc-40dea3b54abe",
+      "name": "[Phase2-T1] getQuotes/getQuote 실구현 + 429 백오프 + env 가드",
+      "description": "src/lib/notion.ts의 getQuotes/getQuote stub(throw)을 실구현으로 대체한다. getQuotes는 dataSources.query로 Quote[] 반환, getQuote는 pages.retrieve + blocks.children.list로 본문 항목까지 포함한 Quote 반환(미존재 시 null). 429 재시도 백오프와 env 누락 가드를 적용한다. 노션 호출은 notion.ts에만, normalize.ts의 normalizeQuote/parseQuoteItems 재사용.",
+      "notes": "items: getQuotes는 목록용이라 normalizeQuote(page)만(빈 items). getQuote만 parseQuoteItems로 항목 채움. 시그니처 유지: getQuotes():Promise<Quote[]>, getQuote(id):Promise<Quote|null>. blocks 100+ 페이지네이션은 MVP 범위 외(주석).",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T22:10:46.720Z",
+      "updatedAt": "2026-06-22T22:15:06.332Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/notion.ts",
+          "type": "TO_MODIFY",
+          "description": "getQuotes/getQuote stub→실구현, withRetry/assertEnv 추가"
+        },
+        {
+          "path": "src/lib/normalize.ts",
+          "type": "DEPENDENCY",
+          "description": "normalizeQuote/parseQuoteItems 재사용"
+        },
+        {
+          "path": "src/lib/notion-schema.ts",
+          "type": "DEPENDENCY",
+          "description": "NOTION_PROP.issuedAt 정렬 키"
+        }
+      ],
+      "implementationGuide": "1) assertEnv(): process.env.NOTION_TOKEN/NOTION_DATA_SOURCE_ID 확인, 없으면 throw new Error(한국어 메시지). getQuotes/getQuote 진입 시 호출. 2) withRetry(fn, retries=2): APIResponseError code==='rate_limited'면 지수 백오프(약 300ms*2^n) 후 재시도, 그 외/소진 시 throw. 3) getQuotes(): withRetry(()=>notion.dataSources.query({ data_source_id: dataSourceId, sorts:[{property: NOTION_PROP.issuedAt, direction:'descending'}], page_size:100 })) → results를 isFullPage(또는 'properties' in p) 가드 후 normalizeQuote(p) map → Quote[]. 노션 sorts 실패 대비 변환 후 issuedAt desc 2차 정렬(null 뒤로). 4) getQuote(id): try{ page=await withRetry(()=>notion.pages.retrieve({page_id:id})); blocksRes=await withRetry(()=>notion.blocks.children.list({block_id:id, page_size:100})); items=parseQuoteItems(blocksRes.results); return isFullPage(page)?normalizeQuote(page, items):null; } catch(e){ if(e instanceof APIResponseError && (e.code==='object_not_found'||e.code==='validation_error')) return null; throw e; }. 5) @notionhq/client v5 타입(PageObjectResponse, isFullPage, APIResponseError). server-only/dataSources.query/2025-09-03 유지. 한국어 주석.",
+      "verificationCriteria": "getQuotes/getQuote가 실구현으로 대체되고 stub throw 제거. getQuote 미존재 ID→null. isFullPage 가드 적용. withRetry(429)·assertEnv 동작. npm run build TS strict 무오류. (실 API 호출 검증은 그룹 B.)",
+      "analysisResult": "견적서 웹앱 MVP Phase 2(데이터 fetch, F004). getQuotes/getQuote 실구현 + 429 백오프 + env 가드. 노션 DB 견적 0건 → 그룹 A(구현+에러 분기 모킹 테스트)는 지금, 그룹 B(실데이터 동작/한글 왕복/ISR Playwright)는 데이터 준비 후 보류. 입력: normalize.ts(normalizeQuote/parseQuoteItems), notion.ts(notion·dataSourceId·stub), notion-schema.ts(NOTION_PROP). 제약: 노션 호출 notion.ts에만·server-only·dataSources.query·2025-09-03, getQuote 미존재→null, isFullPage 가드, 모킹 테스트는 vi.spyOn(실 API 비의존). nextjs-app-router-dev 위임, 그룹 A 통과가 Phase 3/4 진행 게이트(실데이터 검증은 데이터 준비 후 별도).",
+      "summary": "T1 통과. getQuotes/getQuote stub→실구현(notion.ts). getQuotes: dataSources.query(sorts 발행일 desc, page_size 100)→isFullPage 필터→normalizeQuote map→byIssuedAtDesc 2차 정렬(null 뒤로). getQuote: pages.retrieve + blocks.children.list(isFullBlock 가드)→parseQuoteItems→normalizeQuote(page,items), object_not_found/validation_error→null, 그 외 throw. assertEnv(런타임 process.env 체크, 누락 시 한국어 throw), withRetry(rate_limited만 300ms*2^n 백오프, 최대 3회). isFullPage/APIResponseError 등 v5 타입. server-only/2025-09-03 유지, normalize/schema/types 무변경. build TS strict 무오류, stub throw 제거 확인.",
+      "completedAt": "2026-06-22T22:15:06.330Z"
+    },
+    {
+      "id": "af3181cb-a392-40b9-a002-6d75b923e51c",
+      "name": "[Phase2-T2] fetch 에러 분기 단위 테스트 (모킹, 그룹 A)",
+      "description": "getQuotes/getQuote의 에러 분기를 노션 클라이언트 모킹으로 검증하는 vitest 단위 테스트를 작성한다. 실 API 비의존(vi.spyOn). 존재하지 않는 ID→null, env 누락→throw, 429→백오프 후 성공, 500→예외 전파.",
+      "notes": "실데이터 비의존 — 전부 모킹. fixture는 Phase1 notion-pages.ts/notion-blocks.ts 재사용. 모킹이 까다로우면 notion 객체 메서드를 직접 spy.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "d0263289-2f97-4dfe-b9bc-40dea3b54abe"
+        }
+      ],
+      "createdAt": "2026-06-22T22:10:46.720Z",
+      "updatedAt": "2026-06-22T22:15:19.762Z",
+      "relatedFiles": [
+        {
+          "path": "src/lib/__tests__/notion-fetch.test.ts",
+          "type": "CREATE",
+          "description": "fetch 에러 분기 모킹 테스트"
+        },
+        {
+          "path": "src/lib/notion.ts",
+          "type": "DEPENDENCY",
+          "description": "테스트 대상 getQuotes/getQuote"
+        },
+        {
+          "path": "src/lib/__tests__/fixtures/notion-pages.ts",
+          "type": "REFERENCE",
+          "description": "page fixture 재사용"
+        }
+      ],
+      "implementationGuide": "src/lib/__tests__/notion-fetch.test.ts 생성. 1) vi.spyOn(notion.pages,'retrieve')/(notion.dataSources,'query')/(notion.blocks.children,'list')로 응답·에러 모킹, afterEach(vi.restoreAllMocks). 2) 케이스: (a)getQuotes 정상→Quote[](Phase1 fixture page 재사용, normalizeQuote 결과 확인) (b)getQuote 정상→Quote(items 포함) (c)getQuote object_not_found(APIResponseError) →null (d)env 누락(vi.stubEnv로 NOTION_DATA_SOURCE_ID 제거)→throw (e)rate_limited 1회 후 성공→withRetry 재시도 동작(spy 호출 2회) (f)500/기타 에러→throw 전파. 3) APIResponseError 모킹은 @notionhq/client의 에러 형태(code 속성) 모사. server-only 셰임 이미 적용.",
+      "verificationCriteria": "정상/미존재→null/env 누락→throw/429 백오프/500 전파 케이스 전부 통과. 실 노션 호출 없이 모킹만 사용. npm test 전체(기존+신규) 통과.",
+      "analysisResult": "견적서 웹앱 MVP Phase 2(데이터 fetch, F004). getQuotes/getQuote 실구현 + 429 백오프 + env 가드. 노션 DB 견적 0건 → 그룹 A(구현+에러 분기 모킹 테스트)는 지금, 그룹 B(실데이터 동작/한글 왕복/ISR Playwright)는 데이터 준비 후 보류. 입력: normalize.ts(normalizeQuote/parseQuoteItems), notion.ts(notion·dataSourceId·stub), notion-schema.ts(NOTION_PROP). 제약: 노션 호출 notion.ts에만·server-only·dataSources.query·2025-09-03, getQuote 미존재→null, isFullPage 가드, 모킹 테스트는 vi.spyOn(실 API 비의존). nextjs-app-router-dev 위임, 그룹 A 통과가 Phase 3/4 진행 게이트(실데이터 검증은 데이터 준비 후 별도).",
+      "summary": "T2 통과. src/lib/__tests__/notion-fetch.test.ts에 10케이스 모킹 테스트(실 API 비의존). vi.spyOn(notion.pages.retrieve/dataSources.query/blocks.children.list), afterEach vi.restoreAllMocks. 케이스: getQuotes 정상+2차정렬 / isFullPage 탈락 제외 / getQuote 정상+items(amount 보정) / object_not_found→null / validation_error→null / env 누락(vi.stubEnv)→throw·query 미호출 / rate_limited 1회 후 성공(2회 호출) / 재시도 소진 throw(3회) / 500 즉시 throw / getQuote 기타 에러 throw. APIResponseError는 실제 클래스 인스턴스로 모사(instanceof 분기 일치). npm test 43/43 통과(기존 33+신규 10), build 무오류.",
+      "completedAt": "2026-06-22T22:15:19.757Z"
+    },
+    {
+      "id": "32b836f7-af77-4d88-aded-1b037faa5091",
+      "name": "[Phase2-T4] Phase 2 검증 게이트(그룹 A) — 빌드·테스트·ROADMAP 체크·커밋",
+      "description": "Phase 2 그룹 A(구현+모킹 테스트) DoD 확인 후 게이트 통과를 선언한다. npm test 전체 통과 + npm run build 무오류 확인, ROADMAP.md Phase 2의 그룹 A 항목(getQuotes/getQuote/ISR/백오프/env 가드/에러 분기 테스트)만 체크 토글, 실데이터 항목(동작 테스트/ISR 캐시 검증)은 미체크로 남긴 뒤 git commit.",
+      "notes": "메인 세션 수행. ROADMAP은 체크박스만 토글(그룹 B 미체크 유지). 실데이터 검증(T3)은 보류이므로 Phase 3/4 진행을 막지 않음. 커밋 메시지 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "af3181cb-a392-40b9-a002-6d75b923e51c"
+        }
+      ],
+      "createdAt": "2026-06-22T22:10:46.720Z",
+      "updatedAt": "2026-06-22T22:16:14.878Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 2 그룹 A 체크박스 토글"
+        }
+      ],
+      "implementationGuide": "1) npm test로 notion-fetch 모킹 테스트 + 기존 테스트 전부 통과 확인. 2) npm run build 무오류. 3) docs/ROADMAP.md Phase 2 체크박스 중 그룹 A([ ]→[x])만 토글: getQuotes 구현/getQuote 구현/ISR·캐시/429 백오프/env 가드/에러 분기 테스트. 그룹 B(동작 테스트·ISR 캐시 검증)는 [ ] 유지. 검증 게이트 줄은 '그룹 A 통과'로 체크하되 다른 텍스트 추가 금지(오염 금지). 4) git:commit으로 Phase 2 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외).",
+      "verificationCriteria": "npm test 전체 통과 + npm run build 무오류. ROADMAP Phase 2 그룹 A 항목만 [x], 실데이터 항목은 [ ] 유지. Phase 2 그룹 A 산출물 커밋 완료. Phase 3/4 진행 가능 선언.",
+      "analysisResult": "견적서 웹앱 MVP Phase 2(데이터 fetch, F004). getQuotes/getQuote 실구현 + 429 백오프 + env 가드. 노션 DB 견적 0건 → 그룹 A(구현+에러 분기 모킹 테스트)는 지금, 그룹 B(실데이터 동작/한글 왕복/ISR Playwright)는 데이터 준비 후 보류. 입력: normalize.ts(normalizeQuote/parseQuoteItems), notion.ts(notion·dataSourceId·stub), notion-schema.ts(NOTION_PROP). 제약: 노션 호출 notion.ts에만·server-only·dataSources.query·2025-09-03, getQuote 미존재→null, isFullPage 가드, 모킹 테스트는 vi.spyOn(실 API 비의존). nextjs-app-router-dev 위임, 그룹 A 통과가 Phase 3/4 진행 게이트(실데이터 검증은 데이터 준비 후 별도).",
+      "summary": "T4 게이트(그룹 A) 통과 — Phase 2 부분 완료. npm test 43/43 통과(기존 33 + notion-fetch 모킹 10), npm run build 무오류. ROADMAP Phase 2 그룹 A 6개([x]): getQuotes 구현/getQuote 구현/429 백오프/env 가드/에러 분기 테스트/검증 게이트. 미체크 유지: ISR·캐시(페이지 레벨 → Phase 3/4 적용), 동작 테스트·ISR 캐시 검증(실데이터 보류, T3). git commit 29de282. Phase 3/4 진행 가능. 실데이터 검증(T3)은 노션 견적 행 추가 후 별도 수행.",
+      "completedAt": "2026-06-22T22:16:14.872Z"
+    },
+    {
+      "id": "6a534972-8a20-4aff-90e8-a3bb53d58c51",
+      "name": "[Phase3-T1] QuoteCard + QuoteShareButton(F005) 컴포넌트 구현",
+      "description": "견적서 카드와 공유 링크 복사 버튼을 components/quotes/에 구현한다. 카드는 견적 1건의 헤더 정보를 표시하고 상세 링크를 제공하며, 복사 버튼은 상세 절대 URL을 클립보드에 복사 후 토스트를 띄운다.",
+      "notes": "Toaster는 providers에 이미 마운트됨(추가 설정 불필요). 복사 URL은 siteConfig.url(현 localhost) 기반 — 배포 origin 점검은 Phase 7. 카드는 QuoteListClient(client) 하위에 위치.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T22:24:23.830Z",
+      "updatedAt": "2026-06-22T22:26:47.092Z",
+      "relatedFiles": [
+        {
+          "path": "src/components/quotes/quote-card.tsx",
+          "type": "CREATE",
+          "description": "견적서 카드"
+        },
+        {
+          "path": "src/components/quotes/quote-share-button.tsx",
+          "type": "CREATE",
+          "description": "링크 복사 버튼(F005)"
+        },
+        {
+          "path": "src/lib/format.ts",
+          "type": "DEPENDENCY",
+          "description": "formatKRW"
+        },
+        {
+          "path": "src/lib/types.ts",
+          "type": "DEPENDENCY",
+          "description": "Quote/quoteStatusLabel"
+        },
+        {
+          "path": "src/config/site.ts",
+          "type": "DEPENDENCY",
+          "description": "siteConfig.url"
+        }
+      ],
+      "implementationGuide": "1) src/components/quotes/quote-card.tsx: ui/card 기반. 표시 — 견적번호(quoteNumber), 제목(title), 고객명(clientName), 발행일(issuedAt, date-fns format 'yyyy.MM.dd', null→'-'), 합계(formatKRW(totalAmount)), 상태 배지(ui/badge, 라벨=quoteStatusLabel[status]??'미분류', status별 variant 시각 매핑 상수). Link href={`/quotes/${id}`} '견적서 보기'. QuoteShareButton 포함. 2) src/components/quotes/quote-share-button.tsx('use client'): navigator.clipboard.writeText(`${siteConfig.url}/quotes/${id}`) → toast.success('링크가 복사되었습니다'). lucide Copy/Link 아이콘, ui/button. props: quoteId. 3) cn() 병합, 한국어, formatKRW/quoteStatusLabel/siteConfig 재사용(중복 매핑 금지).",
+      "verificationCriteria": "QuoteCard가 견적번호/고객명/발행일/합계(₩)/상태 배지/보기 링크 렌더. QuoteShareButton 클릭 시 상세 절대 URL 클립보드 복사 + sonner 토스트. quoteStatusLabel/formatKRW 재사용, null 안전. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 3(목록 페이지, F001+F005). page.tsx(RSC)에서 getQuotes()→QuoteListClient(필터+카드 그리드), QuoteCard(견적번호/고객명/발행일/formatKRW/상태 배지/보기 링크), QuoteShareButton(클립보드+sonner). 실데이터 10건(상태4종/email null 3/만료2)으로 Playwright E2E. 제약: getQuotes는 RSC만 호출(클라이언트는 Quote[] props), quoteStatusLabel/formatKRW/siteConfig 재사용, TanStack 미사용(배열 필터), revalidate=60, 한국어 UI, 새 프리미티브 shadcn add. 기능=nextjs-app-router-dev, UI 고도화=ui-markup-specialist. Phase 2 그룹 B(실데이터 동작) 동반 검증.",
+      "summary": "T1 통과. QuoteCard(서버 컴포넌트, ui/card): 견적번호·제목·고객명·발행일(date-fns yyyy.MM.dd, null→'-')·합계(formatKRW)·상태 배지(quoteStatusLabel 재사용, STATUS_BADGE_VARIANT 상수로 승인=default/발행=secondary/검토중=outline/만료=destructive/null=outline+'미분류')·견적서 보기 Link(/quotes/[id]). QuoteShareButton('use client', leaf): navigator.clipboard.writeText(siteConfig.url+/quotes/+id)→toast.success, lucide 아이콘+ui/button. quoteStatusLabel/formatKRW/siteConfig 재사용(중복 매핑 없음), cn()/한국어. npm run build 무오류.",
+      "completedAt": "2026-06-22T22:26:47.087Z"
+    },
+    {
+      "id": "8eec2045-857d-4b6b-acf3-fe3264bd591f",
+      "name": "[Phase3-T2] page.tsx 데이터 연결 + QuoteListClient(상태 필터) + ISR",
+      "description": "목록 페이지(src/app/page.tsx, RSC)에서 getQuotes()로 견적을 가져와 카드 그리드로 렌더링한다. 상태 필터 탭은 클라이언트 컴포넌트로 분리한다. 0건이면 기존 EmptyState 유지. ISR revalidate=60 적용.",
+      "notes": "RSC→client 경계: Quote[]는 직렬화 가능(순수 객체)하므로 props 전달 안전. notion/server-only는 page.tsx에만. 필터 키 라벨은 quoteStatusLabel 재사용.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "6a534972-8a20-4aff-90e8-a3bb53d58c51"
+        }
+      ],
+      "createdAt": "2026-06-22T22:24:23.830Z",
+      "updatedAt": "2026-06-22T22:26:58.832Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/page.tsx",
+          "type": "TO_MODIFY",
+          "description": "getQuotes 연결 + revalidate"
+        },
+        {
+          "path": "src/components/quotes/quote-list-client.tsx",
+          "type": "CREATE",
+          "description": "필터 탭 + 카드 그리드(client)"
+        },
+        {
+          "path": "src/lib/notion.ts",
+          "type": "DEPENDENCY",
+          "description": "getQuotes"
+        }
+      ],
+      "implementationGuide": "1) src/app/page.tsx(RSC): export const revalidate=60. const quotes = await getQuotes(). quotes.length===0 → 기존 EmptyState. else → <QuoteListClient quotes={quotes}/>. PageHeader/ThemeToggle 헤더 유지. getQuotes는 RSC에서만 호출(클라이언트 직접 호출 금지). 2) src/components/quotes/quote-list-client.tsx('use client'): props quotes:Quote[]. useState 필터('all'|발행|검토중|승인|만료|미분류). 단순 배열 filter(all=전체, 미분류=status===null, 그 외 status===key). 필터 탭은 ui/button 그룹(variant 토글) 또는 ui/tabs(shadcn add tabs 시). 카드 그리드(CSS grid 반응형) + QuoteCard map. 빈 필터 결과 시 안내 문구. TanStack 미사용.",
+      "verificationCriteria": "/ 진입 시 노션 견적 카드 그리드 렌더(실데이터 10건). 0건이면 EmptyState. 상태 필터 탭 동작(배열 필터, 미분류 null 안전). revalidate=60 적용. getQuotes RSC 전용. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 3(목록 페이지, F001+F005). page.tsx(RSC)에서 getQuotes()→QuoteListClient(필터+카드 그리드), QuoteCard(견적번호/고객명/발행일/formatKRW/상태 배지/보기 링크), QuoteShareButton(클립보드+sonner). 실데이터 10건(상태4종/email null 3/만료2)으로 Playwright E2E. 제약: getQuotes는 RSC만 호출(클라이언트는 Quote[] props), quoteStatusLabel/formatKRW/siteConfig 재사용, TanStack 미사용(배열 필터), revalidate=60, 한국어 UI, 새 프리미티브 shadcn add. 기능=nextjs-app-router-dev, UI 고도화=ui-markup-specialist. Phase 2 그룹 B(실데이터 동작) 동반 검증.",
+      "summary": "T2 통과. page.tsx(RSC): export const revalidate=60(빌드 /에 Revalidate 1m 확인), getQuotes() 호출 → 0건 EmptyState / else QuoteListClient. PageHeader/ThemeToggle 헤더 유지. getQuotes는 RSC 전용(클라이언트 미유입). QuoteListClient('use client'): quotes props, useState 필터('all'/issued/reviewing/approved/expired/unclassified), 단순 배열 filter(미분류 null 안전), 필터 탭 ui/button 그룹(활성 default/비활성 outline, aria-pressed), 카드 그리드 grid gap-4 sm:grid-cols-2 lg:grid-cols-3, 빈 결과 안내. TanStack 미사용(use no memo 불요). 한국어/cn(). npm run build 무오류.",
+      "completedAt": "2026-06-22T22:26:58.824Z"
+    },
+    {
+      "id": "3188beaa-108c-4c37-a20d-2f76e22adcc6",
+      "name": "[Phase3-T3] 목록 E2E(Playwright) + Phase2 그룹B 실데이터 동작 검증",
+      "description": "Playwright MCP로 목록 페이지를 실데이터(10건) 기준 검증한다. 목록 렌더링·상태 필터·링크 복사 E2E + 보류됐던 Phase 2 그룹 B(getQuotes 실데이터 동작·한글 보존)를 함께 확인한다.",
+      "notes": "실데이터 기반 — getQuotes가 실제 노션 10건 반환·정렬·한글 보존됨을 스냅샷으로 검증(Phase 2 그룹 B 동작 테스트 충족). 메인 세션이 Playwright로 수행.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "8eec2045-857d-4b6b-acf3-fe3264bd591f"
+        }
+      ],
+      "createdAt": "2026-06-22T22:24:23.830Z",
+      "updatedAt": "2026-06-22T22:31:20.214Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/page.tsx",
+          "type": "REFERENCE",
+          "description": "검증 대상 목록 페이지"
+        }
+      ],
+      "implementationGuide": "dev 서버(localhost:3000) 기준. 1) browser_navigate '/' → browser_snapshot: 카드 다수 표시(견적번호 Q-2026-*, 고객명 한글, 합계 ₩, 상태 배지). 한글 깨짐 없음(Phase2 그룹B 동작·한글 왕복 확인). 2) 상태 필터 클릭(예 '승인') → 스냅샷으로 해당 상태 카드만 노출 확인. 3) 복사 버튼 클릭 → sonner 토스트 노출 확인, browser_evaluate로 navigator.clipboard 호출/값(상세 URL) 검증(clipboard 권한/모킹 필요 시 window.__copied 가로채기). 4) 0건 EmptyState는 데이터 있으므로 코드 경로만 확인(생략 가능). 콘솔 에러 0건 확인.",
+      "verificationCriteria": "목록에 실데이터 카드 표시(한글·₩·상태 배지), 필터 동작, 복사 토스트+URL 확인, 콘솔 에러 0건. Phase 2 그룹 B(실데이터 동작·한글 보존) 충족.",
+      "analysisResult": "견적서 웹앱 MVP Phase 3(목록 페이지, F001+F005). page.tsx(RSC)에서 getQuotes()→QuoteListClient(필터+카드 그리드), QuoteCard(견적번호/고객명/발행일/formatKRW/상태 배지/보기 링크), QuoteShareButton(클립보드+sonner). 실데이터 10건(상태4종/email null 3/만료2)으로 Playwright E2E. 제약: getQuotes는 RSC만 호출(클라이언트는 Quote[] props), quoteStatusLabel/formatKRW/siteConfig 재사용, TanStack 미사용(배열 필터), revalidate=60, 한국어 UI, 새 프리미티브 shadcn add. 기능=nextjs-app-router-dev, UI 고도화=ui-markup-specialist. Phase 2 그룹 B(실데이터 동작) 동반 검증.",
+      "summary": "T3 통과(Playwright E2E, 실데이터 10건). 목록 렌더링: / 진입 시 견적 10건 카드 표시(Q-2026-010~001 발행일 desc 정렬, 고객사 한글, ₩ 합계, 발행/검토중/승인/만료 상태 배지) — 한글 깨짐 없음, 콘솔 에러 0건. 상태 필터: '승인' 클릭 시 승인 3건(Q-010/006/002)만 카드 노출 확인. 링크 복사(F005): 버튼 클릭 → navigator.clipboard에 상세 절대 URL(http://localhost:3000/quotes/387...258) 정확 기록 + sonner 토스트 '링크가 복사되었습니다' DOM 노출 확인(data-sonner-toast). Phase 2 그룹 B(getQuotes 실데이터 동작·발행일 정렬·한글 보존) 동반 충족. 브라우저/산출물 정리 완료.",
+      "completedAt": "2026-06-22T22:31:20.210Z"
+    },
+    {
+      "id": "45ceb6a3-1699-4dd0-89a9-570b7c4f74e9",
+      "name": "[Phase3-T4] 목록 UI/UX 고도화 (ui-markup-specialist)",
+      "description": "기능·E2E가 통과한 목록 페이지의 시각 완성도를 ui-markup-specialist로 끌어올린다. 로직은 변경하지 않고 마크업/스타일(간격·타이포·카드 그리드 반응형·상태 배지 색·빈 상태·필터 탭 시각)만 다듬는다.",
+      "notes": "로직 불변 — 시각만. 고도화 후 기능 회귀 없는지 P3-5에서 build+E2E 재확인. ui-markup-specialist는 정적 마크업/스타일 전문(비즈니스 로직 제외).",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "3188beaa-108c-4c37-a20d-2f76e22adcc6"
+        }
+      ],
+      "createdAt": "2026-06-22T22:24:23.830Z",
+      "updatedAt": "2026-06-22T22:43:31.951Z",
+      "relatedFiles": [
+        {
+          "path": "src/components/quotes/quote-card.tsx",
+          "type": "TO_MODIFY",
+          "description": "카드 시각 고도화"
+        },
+        {
+          "path": "src/components/quotes/quote-list-client.tsx",
+          "type": "TO_MODIFY",
+          "description": "필터 탭/그리드 시각"
+        },
+        {
+          "path": "src/app/page.tsx",
+          "type": "TO_MODIFY",
+          "description": "헤더/레이아웃 여백"
+        }
+      ],
+      "implementationGuide": "ui-markup-specialist 위임. 대상: quote-card.tsx, quote-list-client.tsx, page.tsx 헤더 영역. 작업 — Tailwind v4 + shadcn 토큰으로 카드 그리드(sm/md/lg 반응형 컬럼), 카드 내부 정보 위계(견적번호 강조/메타 muted/합계 강조), 상태 배지 색 일관성, 필터 탭 활성 상태 시각, 빈 필터 결과 안내, 여백/타이포 정리. 인터랙션 로직(필터 state, 복사 핸들러)·데이터 흐름은 변경 금지. cn() 사용, 한국어 텍스트 유지. 필요 시 ui/tabs·skeleton은 npx shadcn add.",
+      "verificationCriteria": "카드 그리드 반응형·정보 위계·상태 배지 색·필터 탭 활성 시각·빈 상태가 시각적으로 정돈됨. 로직/데이터 흐름 불변. npm run build 무오류, 기능 회귀 없음.",
+      "analysisResult": "견적서 웹앱 MVP Phase 3(목록 페이지, F001+F005). page.tsx(RSC)에서 getQuotes()→QuoteListClient(필터+카드 그리드), QuoteCard(견적번호/고객명/발행일/formatKRW/상태 배지/보기 링크), QuoteShareButton(클립보드+sonner). 실데이터 10건(상태4종/email null 3/만료2)으로 Playwright E2E. 제약: getQuotes는 RSC만 호출(클라이언트는 Quote[] props), quoteStatusLabel/formatKRW/siteConfig 재사용, TanStack 미사용(배열 필터), revalidate=60, 한국어 UI, 새 프리미티브 shadcn add. 기능=nextjs-app-router-dev, UI 고도화=ui-markup-specialist. Phase 2 그룹 B(실데이터 동작) 동반 검증.",
+      "summary": "T4 통과(ui-markup-specialist 위임). 목록 UI/UX 시각 고도화, 로직 불변. QuoteCard: hover elevation(-translate-y-0.5+shadow+ring), 견적번호 mono+자간(식별자), 합계 tabular-nums 강조, 메타 border-t 분리, 고객명 truncate. QuoteListClient: 수직 리듬(gap-6/5), 필터 탭 간격 정돈, 빈 필터 결과를 EmptyState(FilterX 아이콘) 위젯 재사용. page.tsx: 헤더 border-b 구분+여백 확장. 상태 배지 색은 무채색 테마 일관성 위해 기존 variant 매핑 유지(승인 default/발행 secondary/검토중 outline/만료 destructive). 반응형 1/2/3열 유지. 로직(useState/filter/onClick/props/getQuotes/use client 경계)·quoteStatusLabel 미변경, className/JSX/import만. npm run build 무오류 + 단위 43개 통과(회귀 없음). 새 shadcn 추가 없음.",
+      "completedAt": "2026-06-22T22:43:31.948Z"
+    },
+    {
+      "id": "c20bbf48-a6d6-4be8-baaa-2a10173bb4c5",
+      "name": "[Phase3-T5] Phase 3 게이트 — build·E2E·ROADMAP 체크·커밋",
+      "description": "Phase 3 DoD 확인 후 게이트 통과를 선언한다. build 무오류 + E2E(목록/필터/복사) 통과 + UI 고도화 회귀 없음 확인, ROADMAP Phase 3 체크박스 + 보류됐던 Phase 2 동작 테스트 항목 토글, git commit.",
+      "notes": "메인 수행. ROADMAP 체크박스만. Phase 2 동작 테스트(126행)는 P3-3 실데이터 검증으로 충족 → 체크. ISR 캐시 검증(Playwright 시간차)은 여전히 보류 가능(필요 시 Phase 7). 커밋 메시지 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "45ceb6a3-1699-4dd0-89a9-570b7c4f74e9"
+        }
+      ],
+      "createdAt": "2026-06-22T22:24:23.830Z",
+      "updatedAt": "2026-06-22T22:44:53.127Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 3 + Phase 2 동작 테스트 체크"
+        }
+      ],
+      "implementationGuide": "1) npm run build 무오류 + npm test(기존 단위 회귀) 통과. 2) Playwright로 고도화 후 목록/필터/복사 재확인(회귀 없음). 3) docs/ROADMAP.md Phase 3 체크박스([ ]→[x]): 목록 데이터 연결/카드/링크 복사/상태 필터/(로딩 P2는 구현 시)/목록·필터·복사 E2E/검증 게이트. + Phase 2의 'getQuotes/getQuote 동작 테스트' 항목도 실데이터 검증됐으므로 체크. 체크박스만 토글(오염 금지). 4) git:commit으로 Phase 3 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외).",
+      "verificationCriteria": "build 무오류 + E2E 통과 + 단위 회귀 통과. ROADMAP Phase 3 항목 [x] + Phase 2 동작 테스트 [x]. Phase 3 산출물 커밋 완료. Phase 4 진행 가능 선언.",
+      "analysisResult": "견적서 웹앱 MVP Phase 3(목록 페이지, F001+F005). page.tsx(RSC)에서 getQuotes()→QuoteListClient(필터+카드 그리드), QuoteCard(견적번호/고객명/발행일/formatKRW/상태 배지/보기 링크), QuoteShareButton(클립보드+sonner). 실데이터 10건(상태4종/email null 3/만료2)으로 Playwright E2E. 제약: getQuotes는 RSC만 호출(클라이언트는 Quote[] props), quoteStatusLabel/formatKRW/siteConfig 재사용, TanStack 미사용(배열 필터), revalidate=60, 한국어 UI, 새 프리미티브 shadcn add. 기능=nextjs-app-router-dev, UI 고도화=ui-markup-specialist. Phase 2 그룹 B(실데이터 동작) 동반 검증.",
+      "summary": "T5 게이트 통과 — Phase 3 완료. npm run build 무오류(/ Revalidate 1m), 단위 43개 통과, UI 고도화 후 Playwright 재확인(/ 콘솔 에러 0건·구조 유지=회귀 없음). ROADMAP Phase 3 8개 항목 [x](데이터 연결/카드/링크 복사/상태 필터/목록·필터·복사 E2E/검증 게이트), 로딩 상태(P2 미구현) 미체크 유지. git commit c35527a. Phase 2 동작 테스트(126행)는 getQuote 상세 E2E가 검증되는 Phase 4 게이트에서 체크하기로 보류(정직성). Phase 4 진행 가능.",
+      "completedAt": "2026-06-22T22:44:53.122Z"
+    },
+    {
+      "id": "b6cd80b7-9bec-489f-8f6a-d39537bd7f23",
+      "name": "[Phase4-T1] 상세 페이지 데이터 연결 + QuoteDetail 본문 렌더링",
+      "description": "견적서 상세 페이지(src/app/quotes/[id]/page.tsx, RSC)에서 getQuote(id)로 견적을 가져와 전체 내용을 인쇄 품질로 렌더링한다. 미존재 시 notFound(). 본문은 단일 인쇄 컨테이너로 감싸 Phase 5 react-to-print가 잡기 쉽게 구성한다.",
+      "notes": "QuoteDetail은 상호작용 없는 서버 컴포넌트(뒤로가기 Link만). 인쇄 버튼(react-to-print, client)은 Phase 5에서 article을 ref로 인쇄. data-print-area로 식별 가능하게. 회사정보 siteConfig 기반(질문3 미정).",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T22:47:47.965Z",
+      "updatedAt": "2026-06-22T22:53:06.502Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/quotes/[id]/page.tsx",
+          "type": "TO_MODIFY",
+          "description": "getQuote 연결 + notFound + revalidate=300"
+        },
+        {
+          "path": "src/components/quotes/quote-detail.tsx",
+          "type": "CREATE",
+          "description": "상세 본문(인쇄 컨테이너)"
+        },
+        {
+          "path": "src/components/quotes/quote-card.tsx",
+          "type": "REFERENCE",
+          "description": "상태 배지 variant 공용화 대상"
+        },
+        {
+          "path": "src/lib/notion.ts",
+          "type": "DEPENDENCY",
+          "description": "getQuote"
+        },
+        {
+          "path": "src/lib/format.ts",
+          "type": "DEPENDENCY",
+          "description": "formatKRW/sumAmount"
+        }
+      ],
+      "implementationGuide": "1) page.tsx(RSC): export const revalidate=300. const {id}=await params; const quote=await getQuote(id); if(!quote) notFound(). (선택) generateMetadata title=견적번호. 2) src/components/quotes/quote-detail.tsx(서버 컴포넌트): <article data-print-area>로 감싼 본문 — (a)헤더: 발행자(siteConfig.name 기반 최소 표시, 'TODO(질문3) 발행자 정보 출처' 주석) + '견적서' 타이틀 + 견적번호 + 상태 배지 + 발행일/유효기간(date-fns yyyy.MM.dd, null→'-'). (b)고객 정보: clientName, clientEmail(null→'-'). (c)항목 테이블(ui/table): 품목명/수량/단가/금액/비고, 수량·단가·금액 tabular-nums 우측정렬, items 빈 배열→'등록된 항목이 없습니다' 안내. (d)합계: 소계 sumAmount(items)·합계금액 formatKRW(totalAmount, null→'-'). (e)메모(빈→생략/'-'). 3) 뒤로가기: 목록('/') Link(인쇄 컨테이너 밖). 4) 만료 배지: date-fns isBefore(new Date(expiresAt), 오늘)이면 '기한 만료' 배지(유효기간 옆), 상태 배지와 구분. 만료여도 전체 열람 허용. 5) 상태 배지 variant는 quote-card와 공용화(StatusBadge 컴포넌트 추출 또는 공용 상수) — 중복 매핑 금지. formatKRW/quoteStatusLabel 재사용, cn(), 한국어.",
+      "verificationCriteria": "유효 ID 접근 시 헤더/고객/항목 테이블/합계/메모 렌더, 미존재 ID→notFound(), revalidate=300. 만료(유효기간 과거) 시 '기한 만료' 배지(열람 허용). 금액/이메일 null·빈 항목 fallback. 상태 배지 variant 카드와 공용. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 4(상세 페이지, F002). quotes/[id]/page.tsx(RSC)에서 getQuote(id)→null이면 notFound(), revalidate=300. QuoteDetail 본문(발행자/고객 헤더+항목 테이블+합계+메모+상태/만료 배지+뒤로가기)을 단일 인쇄 컨테이너(article data-print-area)로 렌더. 실 견적 10건(Q-2026-010 등, 만료 Q-003/007). 제약: getQuote는 RSC만, formatKRW/sumAmount/quoteStatusLabel 재사용, 상태 배지 variant는 카드와 공용화(StatusBadge), date-fns 만료 판정·날짜 포맷, 만료여도 열람 허용, 금액 null/빈 항목 fallback, 한국어, 인쇄 버튼은 Phase 5. 기능=nextjs-app-router-dev, 인쇄품질 UI=ui-markup-specialist. Phase 2 getQuote 동작 동반 검증.",
+      "summary": "T1 통과. page.tsx(RSC): revalidate=300, await params→getQuote(id)→null이면 notFound(), generateMetadata(title=견적서 견적번호), QuoteDetail 렌더(기존 PageHeader 제거, 상세 자체 헤더). QuoteDetail(서버 컴포넌트): article data-print-area 단일 인쇄 컨테이너 — 발행자(siteConfig.name+TODO 질문3 주석)/견적서 타이틀/견적번호/StatusBadge/발행일·유효기간(date-fns yyyy.MM.dd, null '-'), 고객정보(이메일 null '-'), 항목 테이블(품목/수량/단가/금액/비고, tabular-nums 우측정렬+formatKRW, 빈 배열 안내행), 소계(sumAmount)+합계금액(강조, null '-'), 메모(빈 생략). 뒤로가기 Link는 article 밖. 만료 배지: isBefore(expiresAt, now)→'기한 만료' destructive, 상태 배지와 구분, 열람 허용. StatusBadge 공용 컴포넌트 추출(카드도 사용, 중복 매핑 제거). npm run build 무오류.",
+      "completedAt": "2026-06-22T22:53:06.495Z"
+    },
+    {
+      "id": "520908e8-08f8-4c63-8b2f-5f0264f565a3",
+      "name": "[Phase4-T2] 상세 E2E(Playwright) + Phase2 getQuote 동작 검증",
+      "description": "Playwright MCP로 상세 페이지를 실데이터 기준 검증한다. 상세 렌더링·만료 배지·not-found·금액 표시 + 보류됐던 Phase 2 getQuote 실데이터 동작(본문 항목 파싱 포함)을 함께 확인한다.",
+      "notes": "실데이터 기반 — getQuote가 retrieve+blocks 파싱으로 항목 포함 Quote 반환함을 스냅샷 검증(Phase 2 getQuote 동작 충족). 메인 세션 Playwright 수행.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "b6cd80b7-9bec-489f-8f6a-d39537bd7f23"
+        }
+      ],
+      "createdAt": "2026-06-22T22:47:47.965Z",
+      "updatedAt": "2026-06-22T22:54:17.479Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/quotes/[id]/page.tsx",
+          "type": "REFERENCE",
+          "description": "검증 대상 상세 페이지"
+        }
+      ],
+      "implementationGuide": "dev 서버(localhost:3000). 1) browser_navigate '/quotes/387de2a3-846c-81a6-8675-fd18dda44258'(Q-2026-010) → snapshot: 발행자/견적번호/고객명(한글)/항목 테이블(품목·수량·단가·금액 2행)/합계 ₩/메모 표시. getQuote 본문 JSON 항목 파싱 정상(Phase2 getQuote 동작 확인). 2) 만료 견적(Q-2026-003 id 확인 후 navigate) → '기한 만료' 배지 노출 + 본문 열람 가능 확인. 3) 없는 ID(예 /quotes/invalid-xxxx) navigate → not-found.tsx 화면(견적서를 찾을 수 없습니다 + 목록 링크) 확인. 4) 콘솔 에러 0건. (항목 빈/금액 null 견적은 현 데이터에 없으니 fallback은 코드/단위 확인으로 갈음.) 만료 견적의 실제 page id는 목록에서 Q-2026-003의 href로 확인.",
+      "verificationCriteria": "상세 페이지 실데이터 렌더(헤더/항목표/합계/메모, 한글), 만료 배지 노출+열람 허용, 없는 ID→not-found, 콘솔 에러 0건. Phase 2 getQuote 실데이터 동작·항목 파싱 충족.",
+      "analysisResult": "견적서 웹앱 MVP Phase 4(상세 페이지, F002). quotes/[id]/page.tsx(RSC)에서 getQuote(id)→null이면 notFound(), revalidate=300. QuoteDetail 본문(발행자/고객 헤더+항목 테이블+합계+메모+상태/만료 배지+뒤로가기)을 단일 인쇄 컨테이너(article data-print-area)로 렌더. 실 견적 10건(Q-2026-010 등, 만료 Q-003/007). 제약: getQuote는 RSC만, formatKRW/sumAmount/quoteStatusLabel 재사용, 상태 배지 variant는 카드와 공용화(StatusBadge), date-fns 만료 판정·날짜 포맷, 만료여도 열람 허용, 금액 null/빈 항목 fallback, 한국어, 인쇄 버튼은 Phase 5. 기능=nextjs-app-router-dev, 인쇄품질 UI=ui-markup-specialist. Phase 2 getQuote 동작 동반 검증.",
+      "summary": "T2 통과(Playwright E2E, 실데이터). (1)상세 렌더링: Q-2026-010(/quotes/387...258) → 발행자·견적서 타이틀·견적번호·승인 배지·발행일/유효기간·고객명(한글)·이메일·항목 테이블 2행(품목/수량/단가 ₩150,000/금액 ₩1,500,000/비고)·소계 ₩1,660,000·합계금액 ₩1,660,000·메모(한글) 정상, 콘솔 에러 0건. getQuote 본문 JSON 항목 파싱 정상 → Phase 2 getQuote 동작 충족. (2)만료: Q-2026-003 → '기한 만료' 배지 노출 + 본문(견적 항목/합계) 열람 가능(차단 없음). (3)not-found: 잘못된 ID → '견적서를 찾을 수 없습니다' + '목록으로 돌아가기' 화면. 콘솔의 404는 notFound() 의도된 HTTP 상태, script tag 경고는 Next dev 내부(코드 무관). 금액 빈/null fallback은 데이터에 빈 항목 견적 없어 코드/단위 갈음.",
+      "completedAt": "2026-06-22T22:54:17.474Z"
+    },
+    {
+      "id": "2f026153-c05b-4166-b503-c20e8f84d7e1",
+      "name": "[Phase4-T3] 상세 인쇄 품질 UI/UX 고도화 (ui-markup-specialist)",
+      "description": "기능·E2E 통과한 상세 페이지를 ui-markup-specialist로 인쇄 품질의 문서형 레이아웃으로 고도화한다. 로직 불변, 마크업/스타일만(문서 위계·테이블·여백·타이포·배지).",
+      "notes": "Phase 5 @media print의 토대가 되는 문서형 레이아웃. 로직 불변 — 시각만. 고도화 후 P4-4에서 build+E2E 재확인.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "520908e8-08f8-4c63-8b2f-5f0264f565a3"
+        }
+      ],
+      "createdAt": "2026-06-22T22:47:47.965Z",
+      "updatedAt": "2026-06-22T22:58:36.667Z",
+      "relatedFiles": [
+        {
+          "path": "src/components/quotes/quote-detail.tsx",
+          "type": "TO_MODIFY",
+          "description": "상세 본문 인쇄 품질 고도화"
+        },
+        {
+          "path": "src/app/quotes/[id]/page.tsx",
+          "type": "TO_MODIFY",
+          "description": "레이아웃 여백"
+        }
+      ],
+      "implementationGuide": "ui-markup-specialist 위임. 대상: quote-detail.tsx, quotes/[id]/page.tsx. 작업 — 견적서 문서형 레이아웃(발행자/고객 2단 또는 상하 배치, 문서 타이틀 강조), 항목 테이블 가독성(헤더 강조·행 구분·숫자 우측정렬 tabular-nums·합계 행 강조), 합계 영역 시각 위계(합계금액 강조), 메모/조건 영역, 상태·만료 배지 배치, A4 인쇄를 고려한 max-width/여백/페이지 리듬. 인쇄 컨테이너(data-print-area) 구조 유지. 로직(getQuote 흐름, notFound, props, 만료 판정)·데이터 흐름 변경 금지. cn(), 한국어. 새 프리미티브 필요시 shadcn add(가급적 table/separator 재사용).",
+      "verificationCriteria": "상세가 인쇄 품질 문서형 레이아웃으로 정돈(헤더/항목표/합계 위계·여백·배지). 로직/데이터 흐름 불변. data-print-area 유지. npm run build 무오류, 기능 회귀 없음.",
+      "analysisResult": "견적서 웹앱 MVP Phase 4(상세 페이지, F002). quotes/[id]/page.tsx(RSC)에서 getQuote(id)→null이면 notFound(), revalidate=300. QuoteDetail 본문(발행자/고객 헤더+항목 테이블+합계+메모+상태/만료 배지+뒤로가기)을 단일 인쇄 컨테이너(article data-print-area)로 렌더. 실 견적 10건(Q-2026-010 등, 만료 Q-003/007). 제약: getQuote는 RSC만, formatKRW/sumAmount/quoteStatusLabel 재사용, 상태 배지 variant는 카드와 공용화(StatusBadge), date-fns 만료 판정·날짜 포맷, 만료여도 열람 허용, 금액 null/빈 항목 fallback, 한국어, 인쇄 버튼은 Phase 5. 기능=nextjs-app-router-dev, 인쇄품질 UI=ui-markup-specialist. Phase 2 getQuote 동작 동반 검증.",
+      "summary": "T3 통과(ui-markup-specialist). 상세 페이지를 인쇄 품질 문서형 레이아웃으로 고도화, 로직 불변. 문서 헤더(발행자 uppercase 레이블+견적서 text-4xl+견적번호 mono 박스+날짜 세로 분리), 공급자/고객 2단 카드, 항목 테이블 헤더 배경 강조+금액 강조, 합계금액 bg-primary text-2xl font-bold 최상위 위계, 메모 박스형 섹션, article rounded-xl shadow-lg ring로 A4 종이감, page max-w-4xl 세로 여백 확대. data-print-area 단일 인쇄 컨테이너 유지(Phase 5 ref용). 로직(getQuote/notFound/isBefore 만료 판정/formatKRW/sumAmount/StatusBadge)·props·import 불변, className/JSX만. 새 shadcn 추가 없음(table/separator/badge 재사용). npm run build 무오류 + 단위 43개 통과(회귀 없음).",
+      "completedAt": "2026-06-22T22:58:36.663Z"
+    },
+    {
+      "id": "177a1c1f-398f-4c80-9fa9-bef419156e7e",
+      "name": "[Phase4-T4] Phase 4 게이트 — build·E2E·ROADMAP 체크·커밋",
+      "description": "Phase 4 DoD 확인 후 게이트 통과를 선언한다. build 무오류 + 상세 E2E 통과 + UI 고도화 회귀 없음, ROADMAP Phase 4 체크박스 + 보류됐던 Phase 2 동작 테스트(getQuotes/getQuote) 항목 토글, git commit.",
+      "notes": "메인 수행. ROADMAP 체크박스만. 금액 fallback E2E는 빈 항목 견적 데이터가 없으면 단위/코드로 갈음(과잉 체크 금지 — 실검증 안 된 항목은 미체크). Phase 2 126행은 이제 체크 가능. 커밋 메시지 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "2f026153-c05b-4166-b503-c20e8f84d7e1"
+        }
+      ],
+      "createdAt": "2026-06-22T22:47:47.965Z",
+      "updatedAt": "2026-06-22T22:59:45.340Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 4 + Phase 2 동작 테스트 체크"
+        }
+      ],
+      "implementationGuide": "1) npm run build 무오류 + npm test 단위 회귀 통과. 2) Playwright로 고도화 후 상세/만료/not-found 재확인(회귀 없음). 3) docs/ROADMAP.md Phase 4 체크박스([ ]→[x]): 상세 데이터 연결/본문 렌더링/만료 배지/뒤로가기/인쇄 친화 구조/상세·만료·not-found E2E/(금액 fallback E2E는 데이터 한계 시 단위 갈음 주석 없이 코드 검증)/검증 게이트. + Phase 2 'getQuotes/getQuote 동작 테스트'(126행)는 getQuotes(Phase3)·getQuote(Phase4) 모두 검증됐으므로 체크. 체크박스만 토글(오염 금지). 4) git:commit으로 Phase 4 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외).",
+      "verificationCriteria": "build 무오류 + 상세 E2E 통과 + 단위 회귀 통과. ROADMAP Phase 4 항목 [x](실검증된 것만) + Phase 2 동작 테스트 [x]. Phase 4 산출물 커밋 완료. Phase 5 진행 가능 선언.",
+      "analysisResult": "견적서 웹앱 MVP Phase 4(상세 페이지, F002). quotes/[id]/page.tsx(RSC)에서 getQuote(id)→null이면 notFound(), revalidate=300. QuoteDetail 본문(발행자/고객 헤더+항목 테이블+합계+메모+상태/만료 배지+뒤로가기)을 단일 인쇄 컨테이너(article data-print-area)로 렌더. 실 견적 10건(Q-2026-010 등, 만료 Q-003/007). 제약: getQuote는 RSC만, formatKRW/sumAmount/quoteStatusLabel 재사용, 상태 배지 variant는 카드와 공용화(StatusBadge), date-fns 만료 판정·날짜 포맷, 만료여도 열람 허용, 금액 null/빈 항목 fallback, 한국어, 인쇄 버튼은 Phase 5. 기능=nextjs-app-router-dev, 인쇄품질 UI=ui-markup-specialist. Phase 2 getQuote 동작 동반 검증.",
+      "summary": "T4 게이트 통과 — Phase 4 완료. npm run build 무오류, 단위 43개 통과, UI 고도화 후 Playwright 재확인(data-print-area 유지·항목/합계/메모/뒤로가기 정상·콘솔 에러 0건 = 회귀 없음). ROADMAP Phase 4 9개 [x](데이터 연결/본문/만료 배지/뒤로가기/인쇄 친화 구조/상세·만료·not-found E2E/검증 게이트) + Phase 2 getQuotes/getQuote 동작 테스트 [x]. 금액 fallback E2E(167)는 빈 항목 견적 데이터 부재로 실 E2E 미검증→미체크 유지(과잉 체크 금지). git commit e88207e. Phase 5(PDF 다운로드) 진행 가능.",
+      "completedAt": "2026-06-22T22:59:45.336Z"
+    },
+    {
+      "id": "e2c2a168-a8c9-4c5f-a120-b9214373bf1b",
+      "name": "[Phase5-T1] PDF 인쇄 기능(QuotePrintFrame + 버튼 + @media print) 구현",
+      "description": "상세 페이지에 PDF 저장(인쇄) 기능을 추가한다. QuoteDetail(서버 컴포넌트)을 client 래퍼 QuotePrintFrame으로 감싸 react-to-print로 인쇄하고, @media print CSS로 인쇄 레이아웃을 정리한다.",
+      "notes": "QuoteDetail 서버 컴포넌트 유지(children 전달, ref는 래퍼 div). react-to-print v3.3.0 contentRef API. pageStyle로 @page 백업 주입(iframe 스타일 복사 누락 대비). data-print-area는 인쇄 대상.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-22T23:02:49.057Z",
+      "updatedAt": "2026-06-22T23:07:01.505Z",
+      "relatedFiles": [
+        {
+          "path": "src/components/quotes/quote-print-frame.tsx",
+          "type": "CREATE",
+          "description": "client 인쇄 래퍼 + PDF 버튼"
+        },
+        {
+          "path": "src/app/quotes/[id]/page.tsx",
+          "type": "TO_MODIFY",
+          "description": "QuotePrintFrame으로 QuoteDetail 감싸기"
+        },
+        {
+          "path": "src/app/globals.css",
+          "type": "TO_MODIFY",
+          "description": "@media print / @page A4 / break-inside"
+        },
+        {
+          "path": "src/components/quotes/quote-detail.tsx",
+          "type": "REFERENCE",
+          "description": "인쇄 대상(article data-print-area)"
+        }
+      ],
+      "implementationGuide": "1) src/components/quotes/quote-print-frame.tsx('use client'): const ref=useRef<HTMLDivElement>(null); const handlePrint=useReactToPrint({contentRef:ref, documentTitle:`견적서_${quoteNumber}`, pageStyle:'@page{size:A4;margin:12mm}'}). 렌더: 액션바(div className='print:hidden ...' — 뒤로가기 Link('/') 좌 + PDF 버튼 우, lucide Printer 아이콘 'PDF로 저장') + <div ref={ref}>{children}</div>. props: {quoteNumber:string, children}. 2) page.tsx(RSC) 수정: getQuote→notFound 유지, <QuotePrintFrame quoteNumber={quote.quoteNumber}><QuoteDetail quote={quote}/></QuotePrintFrame>. 기존 뒤로가기 Link는 QuotePrintFrame 액션바로 이동(중복 제거). 3) src/app/globals.css에 @media print 규칙: @page{size:A4;margin:12mm} + @media print{ .print\\:hidden{display:none!important} body{background:#fff} [data-print-area]{box-shadow:none;border:0} } + data-print-area 내 테이블 행/섹션 break-inside:avoid, print-color-adjust:exact. Tailwind print:hidden과 병행. 4) reactCompiler 런타임 오류 시에만 'use no memo'(Phase0-T3상 불필요). getQuote는 RSC만. cn(), 한국어, PascalCase.",
+      "verificationCriteria": "상세 페이지에 'PDF로 저장' 버튼 노출, 클릭 시 useReactToPrint 트리거(런타임 오류 없음). 인쇄 시 액션바/뒤로가기/버튼 print:hidden, data-print-area만 인쇄, @page A4. QuoteDetail 서버 컴포넌트 유지, getQuote RSC. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 5(PDF 다운로드, F003). 상세 본문(article data-print-area)을 react-to-print(useReactToPrint, contentRef)로 인쇄. QuotePrintFrame(client 래퍼)이 ref div로 children(서버 QuoteDetail) 감싸 인쇄 트리거 + PDF 버튼(print:hidden). @media print(globals.css + pageStyle): 화면 전용 요소 숨김·A4·break-inside·color-adjust. 제약: react-to-print만(다른 PDF lib 금지), reactCompiler 호환(Phase0-T3 use no memo 불필요 확인), getQuote는 RSC만, 한글/₩/정렬 인쇄 정상, 한국어. 기능=nextjs-app-router-dev, 인쇄 스타일=ui-markup-specialist. 헤드리스 인쇄 다이얼로그 미발생 → onAfterPrint 플래그/콘솔 오류 0으로 트리거 검증.",
+      "summary": "T1 통과. QuotePrintFrame('use client'): useRef<HTMLDivElement> + useReactToPrint({contentRef, documentTitle:'견적서_'+quoteNumber, onAfterPrint→window.__printed=true(E2E용)}). 액션바(print:hidden): 뒤로가기 Link(ArrowLeft) + PDF 버튼(Printer 아이콘, 'PDF로 저장'). 아래 div ref={ref}로 children 감쌈. page.tsx: getQuote/notFound/revalidate=300 유지, QuotePrintFrame으로 QuoteDetail 감싸기, getQuote RSC만. QuoteDetail: 중복 뒤로가기 제거, article data-print-area 서버 컴포넌트 유지. globals.css @media print: @page A4 margin 12mm, .print\\:hidden display:none, data-print-area box-shadow/border 제거, tr/section/header break-inside:avoid, print-color-adjust:exact. react-to-print만(추가 lib 없음). \"use no memo\" 불필요(빌드 무오류). npm run build TS strict 무오류.",
+      "completedAt": "2026-06-22T23:07:01.500Z"
+    },
+    {
+      "id": "f5a232a0-6fac-407e-8614-d6d6f60e13e4",
+      "name": "[Phase5-T2] PDF E2E(Playwright) — 인쇄 트리거·레이아웃·React Compiler 런타임·한글",
+      "description": "Playwright MCP로 PDF 인쇄 기능을 검증한다. 인쇄 트리거(핸들러 실행/런타임 오류 0), print:hidden 적용, 한글/₩/테이블 인쇄 정상(Phase 0 재확인), React Compiler 런타임 정상.",
+      "notes": "헤드리스에서 실제 인쇄 다이얼로그는 검증 불가 → 트리거 호출/런타임 오류 0/print:hidden 적용으로 갈음. T1에서 onAfterPrint 콜백에 window 플래그를 심으면 트리거 확인 정확도↑(T1에 요청). React Compiler 런타임 오류 0이 핵심(Phase0 재확인).",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "e2c2a168-a8c9-4c5f-a120-b9214373bf1b"
+        }
+      ],
+      "createdAt": "2026-06-22T23:02:49.057Z",
+      "updatedAt": "2026-06-23T10:04:03.266Z",
+      "relatedFiles": [
+        {
+          "path": "src/components/quotes/quote-print-frame.tsx",
+          "type": "REFERENCE",
+          "description": "검증 대상 인쇄 래퍼"
+        }
+      ],
+      "implementationGuide": "dev 서버 localhost:3000. 1) 상세(/quotes/387de2a3-846c-81a6-8675-fd18dda44258) navigate → 'PDF로 저장' 버튼 존재 확인. 2) 인쇄 트리거: browser_evaluate로 window.print 또는 onAfterPrint 가로채기 셋업(window.__printed=false; 원래 print 백업 후 ()=>{window.__printed=true} 대체 불가 시 react-to-print iframe 동작 확인) → 버튼 클릭 → 핸들러 실행되고 콘솔 런타임 오류 0 확인(React Compiler 호환 재확인). react-to-print는 iframe.contentWindow.print 호출하므로 직접 가로채기 어려우면 onAfterPrint/onBeforePrint 콜백에 플래그를 심도록 T1과 협의하거나, 클릭 후 콘솔 에러 0 + 버튼 동작(예외 없음)으로 갈음. 3) print:hidden 적용 확인: browser_evaluate로 액션바/PDF버튼/뒤로가기 요소가 print:hidden 클래스 보유 + data-print-area 존재 확인. 4) 한글/₩/테이블: data-print-area 내 한글·₩·항목 정상(Phase4 확인 재확인). 콘솔 에러 0.",
+      "verificationCriteria": "PDF 버튼 클릭 시 인쇄 트리거 실행 + 콘솔 런타임 오류 0(React Compiler 호환). print:hidden 화면 요소 적용 + data-print-area 인쇄 대상 확인. 한글/₩/테이블 정상. ",
+      "analysisResult": "견적서 웹앱 MVP Phase 5(PDF 다운로드, F003). 상세 본문(article data-print-area)을 react-to-print(useReactToPrint, contentRef)로 인쇄. QuotePrintFrame(client 래퍼)이 ref div로 children(서버 QuoteDetail) 감싸 인쇄 트리거 + PDF 버튼(print:hidden). @media print(globals.css + pageStyle): 화면 전용 요소 숨김·A4·break-inside·color-adjust. 제약: react-to-print만(다른 PDF lib 금지), reactCompiler 호환(Phase0-T3 use no memo 불필요 확인), getQuote는 RSC만, 한글/₩/정렬 인쇄 정상, 한국어. 기능=nextjs-app-router-dev, 인쇄 스타일=ui-markup-specialist. 헤드리스 인쇄 다이얼로그 미발생 → onAfterPrint 플래그/콘솔 오류 0으로 트리거 검증.",
+      "summary": "T2 통과(Playwright PDF E2E). 상세(/quotes/387...258)에서 'PDF로 저장' 버튼 존재, data-print-area 존재, print:hidden 액션바(PDF 버튼·뒤로가기 포함) 적용, 인쇄 영역 내 한글/₩ 정상 확인. 인쇄 트리거: window.print를 no-op로 가로채 실제 다이얼로그 방지 후 버튼 클릭 → react-to-print onAfterPrint 호출됨(window.__printed=true)으로 트리거 동작 확인. 콘솔 런타임 에러 0건 → reactCompiler:true에서 useReactToPrint 정상('use no memo' 불필요 재확인). 실제 PDF 저장 다이얼로그는 헤드리스 한계로 육안 미검증(Phase 7/사용자 확인). 한글 인쇄는 Phase0-T3 + 본 인쇄 영역 한글 보존으로 충족.",
+      "completedAt": "2026-06-23T10:04:03.264Z"
+    },
+    {
+      "id": "b9f11531-fe0e-4da2-bfc0-c09840f1456f",
+      "name": "[Phase5-T3] 인쇄 스타일 정밀화 (ui-markup-specialist)",
+      "description": "ui-markup-specialist로 @media print/인쇄 레이아웃 품질을 정밀화한다. 화면 표시는 유지하고 인쇄 시 A4 문서 품질(여백·페이지 분할·불필요 요소 숨김·색 보존)을 끌어올린다. 로직 불변.",
+      "notes": "인쇄 미디어 전용 스타일만(화면 회귀 금지). 로직(react-to-print 핸들러/ref) 불변. P5-4에서 build/E2E 재확인.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "f5a232a0-6fac-407e-8614-d6d6f60e13e4"
+        }
+      ],
+      "createdAt": "2026-06-22T23:02:49.057Z",
+      "updatedAt": "2026-06-23T10:09:51.830Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/globals.css",
+          "type": "TO_MODIFY",
+          "description": "@media print 정밀화"
+        },
+        {
+          "path": "src/components/quotes/quote-detail.tsx",
+          "type": "TO_MODIFY",
+          "description": "break-inside 등 인쇄 유틸"
+        }
+      ],
+      "implementationGuide": "ui-markup-specialist 위임. 대상: globals.css @media print, quote-detail.tsx/quote-print-frame.tsx의 print: 유틸. 작업 — @page A4 여백 최적화, data-print-area 내 항목 테이블 행/헤더 break-inside:avoid(행 잘림 방지), 합계/섹션 페이지 분할 자연스럽게, 인쇄 시 그림자/테두리 제거(종이엔 불필요), print-color-adjust:exact로 배지/합계 배경 색 보존, 화면 전용(버튼/뒤로가기/네비) print:hidden 확실히. 화면 레이아웃 변경 금지(인쇄 미디어 한정). useReactToPrint/ref/로직 변경 금지. cn(), 한국어.",
+      "verificationCriteria": "인쇄 시 A4 여백·페이지 분할(break-inside)·화면 요소 숨김·색 보존이 품질 있게 적용. 화면 레이아웃 회귀 없음. 로직 불변. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 5(PDF 다운로드, F003). 상세 본문(article data-print-area)을 react-to-print(useReactToPrint, contentRef)로 인쇄. QuotePrintFrame(client 래퍼)이 ref div로 children(서버 QuoteDetail) 감싸 인쇄 트리거 + PDF 버튼(print:hidden). @media print(globals.css + pageStyle): 화면 전용 요소 숨김·A4·break-inside·color-adjust. 제약: react-to-print만(다른 PDF lib 금지), reactCompiler 호환(Phase0-T3 use no memo 불필요 확인), getQuote는 RSC만, 한글/₩/정렬 인쇄 정상, 한국어. 기능=nextjs-app-router-dev, 인쇄 스타일=ui-markup-specialist. 헤드리스 인쇄 다이얼로그 미발생 → onAfterPrint 플래그/콘솔 오류 0으로 트리거 검증.",
+      "summary": "T3 통과(ui-markup-specialist). @media print/@page 정밀화, 화면 회귀 없음(모든 변경 @media print 블록 + print: variant 한정). @page A4 portrait, margin 15/12mm. break-inside: thead(display table-header-group로 페이지마다 헤더 반복)/tfoot/tr/section/header avoid, table은 auto(긴 항목 분할 허용), header break-after avoid. 인쇄 장식 제거(data-print-area box-shadow/border/outline/ring/padding/radius 제거, bg #fff color #000), 단 테이블 구분선·합계 bg-primary 유지. print-color-adjust:exact(+webkit)로 배지/합계/muted 배경 색 보존. quote-detail.tsx에 print: 유틸 클래스만 추가(로직/JSX 구조/useReactToPrint/contentRef/props 불변). npm run build 무오류 + 단위 43개 통과(회귀 없음).",
+      "completedAt": "2026-06-23T10:09:51.826Z"
+    },
+    {
+      "id": "babce98e-5c15-468e-931f-91b1e78d6608",
+      "name": "[Phase5-T4] Phase 5 게이트 — build·E2E·ROADMAP 체크·커밋",
+      "description": "Phase 5 DoD 확인 후 게이트 통과를 선언한다. build 무오류 + 인쇄 트리거/레이아웃 E2E 통과 + 단위 회귀, ROADMAP Phase 5 체크박스 토글, git commit.",
+      "notes": "메인 수행. ROADMAP 체크박스만. 실제 PDF 저장(다이얼로그)은 헤드리스 한계 — 트리거/레이아웃/런타임으로 검증, 실 PDF 육안은 Phase 7 또는 사용자 확인. 커밋 메시지 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "b9f11531-fe0e-4da2-bfc0-c09840f1456f"
+        }
+      ],
+      "createdAt": "2026-06-22T23:02:49.057Z",
+      "updatedAt": "2026-06-23T10:11:03.924Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 5 체크박스 토글"
+        }
+      ],
+      "implementationGuide": "1) npm run build 무오류 + npm test 단위 회귀 통과. 2) Playwright로 인쇄 스타일 정밀화 후 상세/인쇄 트리거 재확인(회귀 없음). 3) docs/ROADMAP.md Phase 5 체크박스([ ]→[x]): PDF 다운로드 버튼/@media print CSS/한글 인쇄 검증/인쇄 트리거 E2E/인쇄 레이아웃 검증/React Compiler 런타임 확인/검증 게이트. 체크박스만 토글(오염 금지). 4) git:commit으로 Phase 5 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외).",
+      "verificationCriteria": "build 무오류 + 인쇄 E2E 통과 + 단위 회귀. ROADMAP Phase 5 항목 [x]. Phase 5 산출물 커밋 완료. Phase 6 진행 가능 선언.",
+      "analysisResult": "견적서 웹앱 MVP Phase 5(PDF 다운로드, F003). 상세 본문(article data-print-area)을 react-to-print(useReactToPrint, contentRef)로 인쇄. QuotePrintFrame(client 래퍼)이 ref div로 children(서버 QuoteDetail) 감싸 인쇄 트리거 + PDF 버튼(print:hidden). @media print(globals.css + pageStyle): 화면 전용 요소 숨김·A4·break-inside·color-adjust. 제약: react-to-print만(다른 PDF lib 금지), reactCompiler 호환(Phase0-T3 use no memo 불필요 확인), getQuote는 RSC만, 한글/₩/정렬 인쇄 정상, 한국어. 기능=nextjs-app-router-dev, 인쇄 스타일=ui-markup-specialist. 헤드리스 인쇄 다이얼로그 미발생 → onAfterPrint 플래그/콘솔 오류 0으로 트리거 검증.",
+      "summary": "T4 게이트 통과 — Phase 5 완료. npm run build 무오류, 단위 43개 통과, 인쇄 스타일 정밀화는 @media print/print: 한정이라 화면 회귀 없음(build+test로 확인). ROADMAP Phase 5 7개 [x](PDF 버튼/@media print/한글 인쇄/인쇄 트리거 E2E/인쇄 레이아웃/React Compiler 런타임/검증 게이트). git commit 7345b87. 헤드리스 한계로 실제 PDF 저장 다이얼로그 육안은 미검증(트리거 onAfterPrint 동작·런타임 0·print:hidden·@media print 규칙·한글 보존으로 갈음) → 사용자 직접 Ctrl+P 확인 권장. Phase 6(에러 처리) 진행 가능.",
+      "completedAt": "2026-06-23T10:11:03.918Z"
+    },
+    {
+      "id": "6bd07a0e-ad80-471a-a01a-8079e810bc59",
+      "name": "[Phase6-T1] error.tsx 에러 래핑/로깅 정리 + not-found 문구 점검",
+      "description": "전역 에러 경계(error.tsx)를 마감한다. 노션 API 오류·일반 오류를 사용자에겐 일반화된 한국어 안내로 보여주고(원본 error.message/스택 미노출), 진단 정보는 console.error로 로깅(운영 로깅 서비스 전송은 TODO). not-found.tsx 문구·버튼 일관성을 점검한다.",
+      "notes": "현재 error.tsx가 이미 원본 미노출 + 버튼 구조 양호 — 과한 변경 금지, 로깅 주석/카피 일관성/분기 최소화 위주. 노션 원본 throw 메시지가 화면에 노출되지 않음을 코드로 보장.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-23T10:13:20.141Z",
+      "updatedAt": "2026-06-23T10:15:04.953Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/error.tsx",
+          "type": "TO_MODIFY",
+          "description": "에러 경계 메시지/로깅 마감"
+        },
+        {
+          "path": "src/app/not-found.tsx",
+          "type": "TO_MODIFY",
+          "description": "문구/버튼 일관성 점검"
+        },
+        {
+          "path": "src/components/common/empty-state.tsx",
+          "type": "REFERENCE",
+          "description": "재사용 위젯"
+        }
+      ],
+      "implementationGuide": "1) src/app/error.tsx 점검·보강: 'use client' 유지. error.message/스택을 JSX에 렌더하지 않음 확인(EmptyState description은 고정 한국어). useEffect에서 console.error(error)에 error.digest도 함께 로깅 + '// TODO: 운영 환경에선 에러 로깅 서비스로 전송' 주석 명확화. EmptyState(AlertTriangle) + '다시 시도'(reset)/'목록으로 돌아가기'(/) 버튼 유지. 메시지 톤: '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.' 류 일반 안내(에러 종류 세분화 노출 금지 — 보안+MVP). 2) not-found.tsx 점검: '견적서를 찾을 수 없습니다' + '목록으로 돌아가기' 버튼 일관성 확인(EmptyState FileQuestion). 3) error/not-found 카피·버튼 라벨 통일. cn(), 한국어. 신규 컴포넌트 없이 기존 보강.",
+      "verificationCriteria": "error.tsx가 원본 error.message/스택을 화면에 노출하지 않고 일반화된 한국어 안내 + 다시 시도/목록 버튼 제공, console.error 로깅(운영 전송 TODO). not-found.tsx 문구·버튼 일관. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 6(에러 처리 마감, F006). error.tsx(client)에서 노션/일반 오류를 일반화된 한국어 안내로 래핑(원본 error.message 미노출)+console.error 로깅(운영 전송 TODO)+다시시도/목록 버튼. not-found.tsx(견적서 없음) 연결 재확인·문구 점검. 카피 일관성(EmptyState 톤). 제약: error.tsx use client, 원본 throw 미노출(정보 유출 방지), EmptyState 재사용, .env.local 훼손 금지, 한국어. 실 노션 장애 재현은 위험/불가→코드 검증+404 E2E로 갈음, 미검증분 정직 표기. 기능 nextjs-app-router-dev. 화면 단순으로 UI 고도화 별도 단계 생략.",
+      "summary": "T1 통과. error.tsx 보강(\"use client\" 유지): 화면에 error.message/스택 미노출(EmptyState 고정 문구만) — 노션 원본 throw 비노출 보장. description을 '일시적인 오류가 발생했습니다. 잠시 후 다시 시도해 주세요.'로 일반화(에러 종류 세분화 미노출, 보안+MVP). useEffect에서 console.error(error)+error.digest 로깅 + 'TODO: 운영 환경 에러 로깅 서비스(Sentry 등) 전송' 주석. 다시 시도(reset)/목록으로 돌아가기(/) 버튼 유지. not-found.tsx: 변경 불필요(견적서를 찾을 수 없습니다 + 목록 버튼, error.tsx와 톤·라벨 통일 확인). 신규 컴포넌트 없이 EmptyState 재사용, 분기 최소화. npm run build 무오류.",
+      "completedAt": "2026-06-23T10:15:04.946Z"
+    },
+    {
+      "id": "d0945d9e-ad30-465b-88e6-b54a416d2df2",
+      "name": "[Phase6-T2] 에러/404 E2E(Playwright)",
+      "description": "Playwright MCP로 404 및 에러 화면을 검증한다. 404는 실제 동작(없는 ID→not-found), API 오류는 안전 범위에서 검증(.env.local 훼손 금지). 실 노션 장애 재현 불가분은 정직하게 미검증 표기.",
+      "notes": "API 오류 실재현은 환경 훼손/노션 다운 필요 → 위험·불가. 404는 실검증. error.tsx 원본 미노출은 T1 코드로 보장. 미검증분(실 노션 장애) 과잉 체크 금지.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "6bd07a0e-ad80-471a-a01a-8079e810bc59"
+        }
+      ],
+      "createdAt": "2026-06-23T10:13:20.141Z",
+      "updatedAt": "2026-06-23T10:15:42.711Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/not-found.tsx",
+          "type": "REFERENCE",
+          "description": "404 검증 대상"
+        },
+        {
+          "path": "src/app/error.tsx",
+          "type": "REFERENCE",
+          "description": "에러 경계(코드 검증)"
+        }
+      ],
+      "implementationGuide": "dev 서버 localhost:3000. 1) 404 E2E: browser_navigate '/quotes/invalid-xxxx' → not-found.tsx('견적서를 찾을 수 없습니다' + '목록으로 돌아가기') 노출 확인 → 목록 버튼 클릭 → '/' 복귀 확인. 2) error.tsx 검증: 실 노션 장애/잘못된 토큰 재현은 .env.local 훼손 필요(금지)이므로 수행하지 않음. 대신 error.tsx 코드가 원본 미노출+버튼 구조임을 확인(코드 리뷰)하고, 가능하면 안전한 방법(없음)으로 갈음. API 오류 실 재현 E2E는 미수행으로 명시. 3) 콘솔: 404의 404 status 로깅은 의도된 동작(에러 아님).",
+      "verificationCriteria": "404: 없는 ID→not-found 화면+목록 버튼→/ 복귀 확인. error.tsx 원본 미노출 코드 확인. 실 노션 장애 재현 E2E는 한계로 미수행 명시. 콘솔(404 status 제외) 에러 0.",
+      "analysisResult": "견적서 웹앱 MVP Phase 6(에러 처리 마감, F006). error.tsx(client)에서 노션/일반 오류를 일반화된 한국어 안내로 래핑(원본 error.message 미노출)+console.error 로깅(운영 전송 TODO)+다시시도/목록 버튼. not-found.tsx(견적서 없음) 연결 재확인·문구 점검. 카피 일관성(EmptyState 톤). 제약: error.tsx use client, 원본 throw 미노출(정보 유출 방지), EmptyState 재사용, .env.local 훼손 금지, 한국어. 실 노션 장애 재현은 위험/불가→코드 검증+404 E2E로 갈음, 미검증분 정직 표기. 기능 nextjs-app-router-dev. 화면 단순으로 UI 고도화 별도 단계 생략.",
+      "summary": "T2 통과(404 E2E). 없는 ID(/quotes/invalid-nonexistent-9999) → not-found.tsx 노출('견적서를 찾을 수 없습니다' + 요청하신 견적서가 존재하지 않거나 삭제 안내 + '목록으로 돌아가기'), 버튼 클릭 → / (견적서 목록) 복귀 확인. 콘솔 2건은 404 HTTP status(notFound 의도된 동작) + Next dev script tag 경고(코드 무관). error.tsx 원본 미노출은 T1 코드로 보장(error.message/스택 JSX 미렌더). 실 노션 장애/잘못된 토큰 재현 E2E는 .env.local 훼손 필요로 미수행(정직 표기) — Phase 7 또는 운영 모니터링으로 위임.",
+      "completedAt": "2026-06-23T10:15:42.709Z"
+    },
+    {
+      "id": "36236391-4483-4d9e-a732-e6de93b75bdb",
+      "name": "[Phase6-T3] Phase 6 게이트 — build·E2E·ROADMAP 체크·커밋",
+      "description": "Phase 6 DoD 확인 후 게이트 통과를 선언한다. build 무오류 + 404 E2E 통과 + 단위 회귀, ROADMAP Phase 6 체크박스 토글(실검증분만), git commit.",
+      "notes": "메인 수행. ROADMAP 체크박스만. API 오류 E2E(실 노션 장애)는 재현 불가로 미체크 유지가 정직. 커밋 메시지 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "d0945d9e-ad30-465b-88e6-b54a416d2df2"
+        }
+      ],
+      "createdAt": "2026-06-23T10:13:20.141Z",
+      "updatedAt": "2026-06-23T10:17:11.157Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 6 체크박스 토글"
+        }
+      ],
+      "implementationGuide": "1) npm run build 무오류 + npm test 단위 회귀. 2) docs/ROADMAP.md Phase 6 체크박스([ ]→[x]): not-found 연결 확인/error 경계 메시지 분기/에러 카피 다듬기/404 E2E/검증 게이트. 'API 오류 E2E'(실 노션 장애 재현)는 환경 한계로 미수행 → 미체크 유지 또는 코드 검증분만(과잉 체크 금지, 실 재현 미검증이면 미체크). 체크박스만 토글(오염 금지). 3) git:commit으로 Phase 6 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외).",
+      "verificationCriteria": "build 무오류 + 404 E2E 통과 + 단위 회귀. ROADMAP Phase 6 실검증 항목 [x], 실 노션 장애 재현 E2E는 미체크(정직). Phase 6 산출물 커밋 완료. Phase 7 진행 가능 선언.",
+      "analysisResult": "견적서 웹앱 MVP Phase 6(에러 처리 마감, F006). error.tsx(client)에서 노션/일반 오류를 일반화된 한국어 안내로 래핑(원본 error.message 미노출)+console.error 로깅(운영 전송 TODO)+다시시도/목록 버튼. not-found.tsx(견적서 없음) 연결 재확인·문구 점검. 카피 일관성(EmptyState 톤). 제약: error.tsx use client, 원본 throw 미노출(정보 유출 방지), EmptyState 재사용, .env.local 훼손 금지, 한국어. 실 노션 장애 재현은 위험/불가→코드 검증+404 E2E로 갈음, 미검증분 정직 표기. 기능 nextjs-app-router-dev. 화면 단순으로 UI 고도화 별도 단계 생략.",
+      "summary": "T3 게이트 통과 — Phase 6 완료. npm run build 무오류 + 단위 43개 통과. ROADMAP Phase 6 체크: not-found 연결 확인/error 경계 메시지 분기/에러 카피 다듬기/404 E2E/검증 게이트 [x]. API 오류 E2E(실 노션 장애 재현)는 .env.local 훼손 필요로 미수행 → 미체크 유지(정직). git commit 92c4d77(error.tsx 변경, not-found.tsx는 변경 불필요로 미수정). 에러 처리 기능 완료(404 실검증 + error.tsx 원본 미노출 코드 보장). Phase 7(배포 & 검수) 진행 가능.",
+      "completedAt": "2026-06-23T10:17:11.150Z"
+    },
+    {
+      "id": "fc725d9d-34ad-4acd-93a4-42c4f5444bc5",
+      "name": "[Phase7-T1] 공유 링크 URL 배포 도메인 대응 수정",
+      "description": "QuoteShareButton의 공유 URL을 배포 도메인에 자동 대응하도록 수정한다. 현재 siteConfig.url('http://localhost:3000') 기반이라 배포 시 localhost URL이 복사되는 버그가 있다. 클라이언트 컴포넌트이므로 window.location.origin을 사용한다.",
+      "notes": "client 컴포넌트라 window 접근 안전(클릭 시점). siteConfig.url은 메타/폴백용 유지(제거 아님). 복사 동작 외 변경 없음.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-23T10:50:09.429Z",
+      "updatedAt": "2026-06-23T10:51:26.884Z",
+      "relatedFiles": [
+        {
+          "path": "src/components/quotes/quote-share-button.tsx",
+          "type": "TO_MODIFY",
+          "description": "공유 URL을 window.location.origin 기반으로"
+        },
+        {
+          "path": "src/config/site.ts",
+          "type": "REFERENCE",
+          "description": "siteConfig.url 폴백"
+        }
+      ],
+      "implementationGuide": "src/components/quotes/quote-share-button.tsx 수정: shareUrl 생성을 `const origin = typeof window !== 'undefined' ? window.location.origin : siteConfig.url; const shareUrl = `${origin}/quotes/${quoteId}`;`로 변경(방어적 폴백 포함). siteConfig import는 폴백용으로 유지 가능. 로컬에선 localhost(동일), 배포 시 실제 도메인 자동 반영. 다른 로직(clipboard/toast) 불변. cn(), 한국어 주석 유지.",
+      "verificationCriteria": "복사 URL이 window.location.origin 기반(`<origin>/quotes/<id>`)으로 생성, 배포 도메인 자동 대응. 로컬에서 토스트+복사 동작 유지. npm run build 무오류.",
+      "analysisResult": "견적서 웹앱 MVP Phase 7(배포&검수, 로컬 검증만). 공유 링크 URL을 window.location.origin으로 수정(배포 도메인 자동), 로컬 build/lint/단위43/E2E 회귀, docs/deploy.md 배포 가이드. Vercel 실배포·배포URL 성공기준(60초 반영/공유링크 접근 등)은 사용자 영역으로 ROADMAP 미체크. 제약: QuoteShareButton(client)만 수정(typeof window 폴백), .env.local 훼손 금지, 한국어, Phase0 교훈(NOTION_DATA_SOURCE_ID=data source ID) 가이드 명시. 공유URL 수정=nextjs-app-router-dev, 검증·가이드=메인.",
+      "summary": "T1 통과. quote-share-button.tsx에서 공유 URL 생성을 window.location.origin 기반으로 변경(typeof window 가드로 siteConfig.url 폴백). 클릭 시점 origin 사용 → 로컬은 localhost, Vercel 배포 시 실제 도메인 자동 반영(localhost 복사 버그 해소). 핸들러 내부에서만 window 참조라 하이드레이션 불일치 없음. clipboard/toast/마크업 로직 불변, siteConfig import 폴백 유지, 한국어 주석. 이 파일만 수정. npm run build 무오류.",
+      "completedAt": "2026-06-23T10:51:26.874Z"
+    },
+    {
+      "id": "16bf0a86-4c91-4229-bd7f-feb6e333d22a",
+      "name": "[Phase7-T2] 로컬 프로덕션 검증 (build·lint·단위테스트)",
+      "description": "프로덕션 빌드와 정적 검증을 수행한다. npm run build(React Compiler), npm run lint 무오류, vitest 단위 43개 통과를 확인한다.",
+      "notes": "메인 수행. 공유 URL 수정(T1) 반영 후 빌드. lint 경고는 기존 수준 허용.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "fc725d9d-34ad-4acd-93a4-42c4f5444bc5"
+        }
+      ],
+      "createdAt": "2026-06-23T10:50:09.429Z",
+      "updatedAt": "2026-06-23T10:53:03.402Z",
+      "relatedFiles": [
+        {
+          "path": "package.json",
+          "type": "REFERENCE",
+          "description": "build/lint/test 스크립트"
+        }
+      ],
+      "implementationGuide": "1) npm run build → Compiled successfully + TypeScript strict 통과 + 라우트(/, /quotes/[id]) 정상, revalidate 적용 확인. 2) npm run lint → 오류 0(기존 경고 수준 확인). 3) npm test → 43개 통과. 실패 시 원인 보고.",
+      "verificationCriteria": "npm run build 무오류 + npm run lint 오류 0 + npm test 43개 통과.",
+      "analysisResult": "견적서 웹앱 MVP Phase 7(배포&검수, 로컬 검증만). 공유 링크 URL을 window.location.origin으로 수정(배포 도메인 자동), 로컬 build/lint/단위43/E2E 회귀, docs/deploy.md 배포 가이드. Vercel 실배포·배포URL 성공기준(60초 반영/공유링크 접근 등)은 사용자 영역으로 ROADMAP 미체크. 제약: QuoteShareButton(client)만 수정(typeof window 폴백), .env.local 훼손 금지, 한국어, Phase0 교훈(NOTION_DATA_SOURCE_ID=data source ID) 가이드 명시. 공유URL 수정=nextjs-app-router-dev, 검증·가이드=메인.",
+      "summary": "T2 통과. npm run build 무오류(Compiled + TS strict, / Revalidate 적용), npm test 43/43 통과. npm run lint 오류 0(요구 충족) + 경고 2건(notion-schema.ts NOTION_PROP_TYPE 미사용 — normalize.ts가 자체 타입 가드로 동작, 문서 참조용 상수로 잔존 / notion.ts:67 불필요 eslint-disable). 경고는 기능 무관·기존 수준 허용. 공유 URL 수정(T1) 반영 후 빌드 정상.",
+      "completedAt": "2026-06-23T10:53:03.396Z"
+    },
+    {
+      "id": "df4aa0ca-91c8-4efe-9ab5-31ff769f6a89",
+      "name": "[Phase7-T3] 로컬 E2E 회귀 (Playwright)",
+      "description": "Phase 3~6 시나리오를 Playwright로 일괄 회귀 검증한다. 목록/필터/복사/상세/만료/PDF 트리거/404.",
+      "notes": "메인 Playwright 수행. 실제 인쇄 다이얼로그는 window.print 가로채 방지. 기존 시나리오 회귀라 빠르게.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "16bf0a86-4c91-4229-bd7f-feb6e333d22a"
+        }
+      ],
+      "createdAt": "2026-06-23T10:50:09.429Z",
+      "updatedAt": "2026-06-23T11:07:58.236Z",
+      "relatedFiles": [
+        {
+          "path": "src/app/page.tsx",
+          "type": "REFERENCE",
+          "description": "목록"
+        },
+        {
+          "path": "src/app/quotes/[id]/page.tsx",
+          "type": "REFERENCE",
+          "description": "상세/PDF"
+        }
+      ],
+      "implementationGuide": "dev 서버 localhost:3000. 1) / → 카드 10건/상태 배지, 필터(승인) 동작, 복사 버튼→토스트+복사 URL이 origin 기반(`http://localhost:3000/quotes/<id>`)인지 확인(T1 반영). 2) 상세(Q-2026-010) → 본문/항목/합계/메모. 3) 만료(Q-2026-003) → 기한 만료 배지+열람. 4) PDF 버튼 → window.print 가로채기 후 클릭→onAfterPrint(window.__printed) 트리거+콘솔 에러 0. 5) 없는 ID → not-found→목록 복귀. 각 단계 콘솔 에러 0(404 status 제외). 검증 후 브라우저 닫고 .playwright-mcp 정리.",
+      "verificationCriteria": "목록/필터/복사(origin URL)/상세/만료/PDF 트리거/404 전부 동작, 콘솔 에러 0(404 status 제외). 회귀 없음.",
+      "analysisResult": "견적서 웹앱 MVP Phase 7(배포&검수, 로컬 검증만). 공유 링크 URL을 window.location.origin으로 수정(배포 도메인 자동), 로컬 build/lint/단위43/E2E 회귀, docs/deploy.md 배포 가이드. Vercel 실배포·배포URL 성공기준(60초 반영/공유링크 접근 등)은 사용자 영역으로 ROADMAP 미체크. 제약: QuoteShareButton(client)만 수정(typeof window 폴백), .env.local 훼손 금지, 한국어, Phase0 교훈(NOTION_DATA_SOURCE_ID=data source ID) 가이드 명시. 공유URL 수정=nextjs-app-router-dev, 검증·가이드=메인.",
+      "summary": "T3 통과(로컬 E2E 회귀, 실데이터). 목록: 카드 10건·필터 버튼 6개·복사 URL이 window.location.origin 기반(http://localhost:3000/quotes/<id>, T1 반영)·콘솔 에러 0. 상세(Q-2026-010): 본문/항목/합계 ₩1,660,000/메모 렌더·data-print-area 존재·PDF 버튼 클릭→onAfterPrint(printed true) 트리거·콘솔 에러 0. 만료(Q-2026-003): 기한 만료 배지 + 본문 열람 가능. 404(regression-invalid-id): not-found 화면(콘솔 2건은 404 status·dev 경고로 무관). Phase 3~6 전 시나리오 회귀 무결, 회귀 없음.",
+      "completedAt": "2026-06-23T11:07:58.234Z"
+    },
+    {
+      "id": "ccaae467-635d-4411-8115-d5438234fa55",
+      "name": "[Phase7-T4] Vercel 배포 가이드 문서 작성 (docs/deploy.md)",
+      "description": "사용자가 직접 Vercel에 배포할 수 있도록 배포 가이드를 작성한다. env 설정, 배포 절차, 배포 후 성공 기준 체크리스트를 포함한다.",
+      "notes": "문서만 작성(실제 Vercel 작업 안 함). Phase0~6 산출물(notion-schema.md 등) 참조. 성공 기준은 사용자가 배포 후 체크.",
+      "status": "completed",
+      "dependencies": [],
+      "createdAt": "2026-06-23T10:50:09.429Z",
+      "updatedAt": "2026-06-23T11:08:47.070Z",
+      "relatedFiles": [
+        {
+          "path": "docs/deploy.md",
+          "type": "CREATE",
+          "description": "Vercel 배포 가이드"
+        },
+        {
+          "path": ".env.example",
+          "type": "REFERENCE",
+          "description": "env 키"
+        },
+        {
+          "path": "docs/notion-schema.md",
+          "type": "REFERENCE",
+          "description": "data source ID 교훈"
+        }
+      ],
+      "implementationGuide": "docs/deploy.md 생성(한국어): 1) 사전 준비 — 노션 통합 생성, DB에 통합 공유, data source ID 확보(databases.retrieve→data_sources[], ⚠️ database ID와 다름 — Phase0 교훈). 2) Vercel 환경변수 — NOTION_TOKEN, NOTION_DATA_SOURCE_ID(필수), NEXT_PUBLIC_SITE_URL(선택, 메타용). 3) 배포 절차 — GitHub repo import → Framework Next.js 자동 → env 입력 → Deploy. 4) 캐시 — ISR revalidate 목록60초/상세300초(노션 변경 반영 시간). 5) 배포 후 성공 기준 체크리스트(사용자 확인용): 노션 변경 60초 내 목록 반영 / 상세 PDF 저장+한글 정상 / 없는 URL→not-found / 공유 링크로 접근 가능 / 견적 URL이 노션 UUID(추측 불가) / 공유 링크가 배포 도메인. 6) 주의사항(.env.local 커밋 금지 등).",
+      "verificationCriteria": "docs/deploy.md에 사전준비/env/배포절차/ISR/성공기준 체크리스트/주의사항 포함. data source ID 교훈 명시. 한국어.",
+      "analysisResult": "견적서 웹앱 MVP Phase 7(배포&검수, 로컬 검증만). 공유 링크 URL을 window.location.origin으로 수정(배포 도메인 자동), 로컬 build/lint/단위43/E2E 회귀, docs/deploy.md 배포 가이드. Vercel 실배포·배포URL 성공기준(60초 반영/공유링크 접근 등)은 사용자 영역으로 ROADMAP 미체크. 제약: QuoteShareButton(client)만 수정(typeof window 폴백), .env.local 훼손 금지, 한국어, Phase0 교훈(NOTION_DATA_SOURCE_ID=data source ID) 가이드 명시. 공유URL 수정=nextjs-app-router-dev, 검증·가이드=메인.",
+      "summary": "T4 통과. docs/deploy.md 작성(한국어): 1)사전 준비(노션 통합 생성·DB 공유·data source ID 확보, ⚠️ database ID와 다름 Phase0 교훈 + 실제 ID 예시) + DB 스키마(견적번호=title/제목=rich_text swap, 항목 JSON 코드 블록 방식 A). 2)Vercel 환경변수 표(NOTION_TOKEN/NOTION_DATA_SOURCE_ID 필수, NEXT_PUBLIC_SITE_URL 선택). 3)배포 절차(import→Next.js→env→deploy). 4)ISR(목록60/상세300). 5)배포 후 성공 기준 체크리스트 6항목(60초 반영/PDF+한글/not-found/공유링크 배포도메인+접근/UUID/에러 원본 미노출). 6)주의사항(.env 커밋 금지·토큰 rotate·통합 공유·공개 접근). notion-schema.md/src 참조 일관.",
+      "completedAt": "2026-06-23T11:08:47.068Z"
+    },
+    {
+      "id": "afe83ae7-66f9-4926-a7d6-3de6222cc76c",
+      "name": "[Phase7-T5] Phase 7 게이트 — ROADMAP 체크·커밋·MVP 완료 요약",
+      "description": "Phase 7 로컬 검증분 완료를 확인하고 게이트를 마감한다. ROADMAP Phase 7 로컬 검증 항목만 체크(실배포·배포URL 성공기준은 사용자 영역으로 미체크), git commit, MVP 전체 완료 요약.",
+      "notes": "메인 수행. ROADMAP 로컬분만 체크, 실배포분 미체크(정직). summary.md 요약은 진행 기록(오염 아님). 커밋 한국어.",
+      "status": "completed",
+      "dependencies": [
+        {
+          "taskId": "df4aa0ca-91c8-4efe-9ab5-31ff769f6a89"
+        },
+        {
+          "taskId": "ccaae467-635d-4411-8115-d5438234fa55"
+        }
+      ],
+      "createdAt": "2026-06-23T10:50:09.429Z",
+      "updatedAt": "2026-06-23T11:10:00.424Z",
+      "relatedFiles": [
+        {
+          "path": "docs/ROADMAP.md",
+          "type": "TO_MODIFY",
+          "description": "Phase 7 로컬 검증분 체크"
+        },
+        {
+          "path": "docs/summary.md",
+          "type": "TO_MODIFY",
+          "description": "MVP 완료 요약"
+        }
+      ],
+      "implementationGuide": "1) build/lint/test/E2E 회귀(T2,T3) 통과 + 공유URL 수정(T1) + deploy.md(T4) 확인. 2) docs/ROADMAP.md Phase 7 체크박스([ ]→[x]): 프로덕션 빌드 검증/전체 단위 테스트 통과/전체 E2E 회귀/공유 링크 절대 URL 점검. 미체크 유지: Vercel 환경변수 설정/성공 기준 전수 체크(6개 하위 포함) — 실배포 후 사용자 검증. 체크박스만 토글(오염 금지). 3) docs/summary.md에 MVP 전체 완료 요약(Phase 0~7, 배포는 가이드/사용자) 추가. 4) git:commit으로 Phase 7 산출물 커밋(.env.local/.mcp.json/shrimp_data 제외). 5) 최종 보고: 전체 Phase 0~7 진척, 커밋 목록, 사용자 잔여(Vercel 배포) 안내.",
+      "verificationCriteria": "ROADMAP Phase 7 로컬 검증 항목 [x], 실배포·배포URL 성공기준 미체크(정직). Phase 7 산출물 커밋. MVP Phase 0~7 진척 요약·사용자 잔여(배포) 안내 완료.",
+      "analysisResult": "견적서 웹앱 MVP Phase 7(배포&검수, 로컬 검증만). 공유 링크 URL을 window.location.origin으로 수정(배포 도메인 자동), 로컬 build/lint/단위43/E2E 회귀, docs/deploy.md 배포 가이드. Vercel 실배포·배포URL 성공기준(60초 반영/공유링크 접근 등)은 사용자 영역으로 ROADMAP 미체크. 제약: QuoteShareButton(client)만 수정(typeof window 폴백), .env.local 훼손 금지, 한국어, Phase0 교훈(NOTION_DATA_SOURCE_ID=data source ID) 가이드 명시. 공유URL 수정=nextjs-app-router-dev, 검증·가이드=메인.",
+      "summary": "T5 게이트 통과 — Phase 7(로컬 검증) 완료, MVP 전체 마감. ROADMAP Phase 7 로컬 검증분 [x]: 프로덕션 빌드 검증/전체 단위 테스트(43)/전체 E2E 회귀(로컬)/공유 링크 절대 URL 점검. 미체크 유지(정직): Vercel 환경변수 설정·성공 기준 전수 체크 6개 — 실배포 후 운영자 검증. docs/summary.md에 MVP Phase 0~7 완료 요약(커밋 8개) + 운영자 잔여(배포) 안내 추가. git commit a243cfc. 전체 8개 커밋(Phase 0~7), 단위 43개 + Playwright E2E 통과, deploy.md 가이드 완비. 실배포는 사용자 영역.",
+      "completedAt": "2026-06-23T11:10:00.418Z"
+    }
+  ]
+}
