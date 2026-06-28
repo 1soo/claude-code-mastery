@@ -1,0 +1,26 @@
+{
+  "skill_name": "card-news",
+  "evals": [
+    {
+      "id": 0,
+      "name": "new-article-full-deck",
+      "prompt": "docs/sources/claude-memory.md 글로 인스타 카드뉴스 만들어줘. 기존 카드들이랑 똑같은 스타일로.",
+      "expected_output": "cover→body→CTA 구조의 card-N.html 데크. styles.css 컴포넌트(.cover/.body-head/.lead/.feat/.panel/.banner/.cta)를 재사용하고, 각 카드 1000x1350, .dots 동기화, CTA 브랜딩 유지. (캡처 단계는 PNG가 output/에 생성되면 가점)",
+      "files": ["sources/claude-memory.md"]
+    },
+    {
+      "id": 1,
+      "name": "casual-paste-deck",
+      "prompt": "이 글 인스타 카드로 만들어줘:\n\n# 다크 모드가 기본이 됩니다\n\n다음 업데이트부터 모든 신규 사용자에게 다크 모드가 기본 테마로 적용됩니다. 눈의 피로를 줄이고 배터리 소모를 낮추기 위한 변경입니다. 기존 사용자는 설정에서 라이트 모드로 되돌릴 수 있습니다. 시스템 설정을 따라가는 '자동' 옵션도 새로 추가됩니다.",
+      "expected_output": "짧은 글에 맞게 cover + 1~2 본문 + CTA 정도의 데크. 템플릿 컴포넌트 재사용, 과하게 6장으로 패딩하지 않음. 1000x1350, .dots 동기화.",
+      "files": []
+    },
+    {
+      "id": 2,
+      "name": "add-matching-card",
+      "prompt": "기존 Claude Tag 카드뉴스에 자주 묻는 질문(FAQ) 카드를 한 장 더 추가해줘. 지금 디자인이랑 자연스럽게 어울리게.",
+      "expected_output": "기존 데크에 어울리는 새 card-N.html 한 장. .panel 등 기존 컴포넌트로 구성, styles.css에 새 클래스 발명 없이 재사용, .dots/pageno 일관성 유지. styles.css는 손대지 않음(또는 손대면 명시).",
+      "files": []
+    }
+  ]
+}

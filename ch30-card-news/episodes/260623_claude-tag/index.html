@@ -1,0 +1,514 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Claude Tag 카드뉴스</title>
+<link rel="preconnect" href="https://cdn.jsdelivr.net" crossorigin />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.css" />
+<style>
+  :root {
+    --ground: #0B0B0D;
+    --ground-2: #141418;
+    --surface: #18181E;
+    --line: rgba(255, 255, 255, 0.08);
+    --text: #FFFFFF;
+    --muted: #9A9AA3;
+    --muted-2: #6E6E78;
+    --accent: #FF6B35;
+    --accent-2: #FF8A4C;
+    --blue: #5B8DEF;
+    --purple: #A07BFF;
+    --pink: #F06B9B;
+    --green: #46C58B;
+  }
+
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+
+  html { -webkit-text-size-adjust: 100%; }
+
+  body {
+    background: #050506;
+    font-family: "Pretendard", "Pretendard Variable", "Malgun Gothic", -apple-system, sans-serif;
+    color: var(--text);
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 48px;
+    padding: 48px 0;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ---- Card frame: 4:5 (1000 x 1350) ---- */
+  .card {
+    position: relative;
+    width: 1000px;
+    height: 1350px;
+    flex: 0 0 auto;
+    background: var(--ground);
+    overflow: hidden;
+    padding: 90px 80px 120px;
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* subtle vignette / atmosphere shared by all cards */
+  .card::after {
+    content: "";
+    position: absolute;
+    inset: 0;
+    background:
+      radial-gradient(120% 80% at 50% -10%, rgba(255, 107, 53, 0.10), transparent 55%),
+      radial-gradient(100% 60% at 100% 110%, rgba(91, 141, 239, 0.06), transparent 60%);
+    pointer-events: none;
+  }
+
+  .card > * { position: relative; z-index: 2; }
+
+  /* ---- Shared chrome ---- */
+  .pageno {
+    position: absolute;
+    top: 70px;
+    right: 80px;
+    font-size: 26px;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    color: var(--muted-2);
+    z-index: 3;
+  }
+
+  .arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    border-radius: 50%;
+    border: 1px solid var(--line);
+    color: var(--muted-2);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    z-index: 3;
+    background: rgba(255, 255, 255, 0.02);
+  }
+  .arrow.left  { left: 22px; }
+  .arrow.right { right: 22px; }
+
+  .dots {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 48px;
+    display: flex;
+    justify-content: center;
+    gap: 12px;
+    z-index: 3;
+  }
+  .dots i {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.22);
+    display: block;
+  }
+  .dots i.on { background: var(--accent); width: 22px; border-radius: 4px; }
+
+  .eyebrow {
+    font-size: 22px;
+    font-weight: 700;
+    letter-spacing: 0.34em;
+    color: var(--accent);
+    text-transform: uppercase;
+  }
+
+  .headline {
+    font-weight: 800;
+    font-size: 72px;
+    line-height: 1.12;
+    letter-spacing: -0.02em;
+    color: var(--text);
+  }
+  .headline .or { color: var(--accent); }
+
+  .lead {
+    font-size: 30px;
+    line-height: 1.6;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .lead b { color: var(--text); font-weight: 700; }
+  .lead .or { color: var(--accent-2); font-weight: 700; }
+
+  .body-head { margin-bottom: 56px; }
+  .body-head .eyebrow { margin-bottom: 22px; }
+
+  /* ---- Highlight banner box ---- */
+  .banner {
+    margin-top: auto;
+    border-radius: 16px;
+    background: linear-gradient(180deg, rgba(255, 107, 53, 0.16), rgba(255, 107, 53, 0.07));
+    border: 1px solid rgba(255, 107, 53, 0.30);
+    padding: 34px;
+    text-align: center;
+    font-size: 30px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    color: var(--accent-2);
+  }
+
+  /* ---- Numbered feature cards (Card 3) ---- */
+  .feat-list { display: flex; flex-direction: column; gap: 22px; }
+  .feat {
+    display: flex;
+    align-items: flex-start;
+    gap: 26px;
+    padding: 32px 34px;
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    border-left-width: 4px;
+  }
+  .feat .num {
+    flex: 0 0 auto;
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 22px;
+    font-weight: 800;
+  }
+  .feat .txt h3 {
+    font-size: 32px;
+    font-weight: 800;
+    letter-spacing: -0.01em;
+    margin-bottom: 8px;
+  }
+  .feat .txt p {
+    font-size: 25px;
+    line-height: 1.5;
+    color: var(--muted);
+    font-weight: 500;
+  }
+  .feat .txt p .hl { color: var(--text); font-weight: 700; }
+
+  .feat.c-blue   { border-left-color: var(--blue);   background: linear-gradient(90deg, rgba(91,141,239,0.12), var(--surface) 60%); }
+  .feat.c-purple { border-left-color: var(--purple); background: linear-gradient(90deg, rgba(160,123,255,0.12), var(--surface) 60%); }
+  .feat.c-pink   { border-left-color: var(--pink);   background: linear-gradient(90deg, rgba(240,107,155,0.12), var(--surface) 60%); }
+  .feat.c-blue   .num { background: rgba(91,141,239,0.20);  color: var(--blue); }
+  .feat.c-purple .num { background: rgba(160,123,255,0.20); color: var(--purple); }
+  .feat.c-pink   .num { background: rgba(240,107,155,0.20); color: var(--pink); }
+
+  /* ---- Flow row (Card 4) ---- */
+  .flow { display: flex; align-items: stretch; gap: 0; margin-bottom: 44px; }
+  .flow .step {
+    flex: 1;
+    border-radius: 14px;
+    padding: 24px 14px;
+    text-align: center;
+    background: var(--surface);
+    border: 1px solid var(--line);
+  }
+  .flow .step .n {
+    font-size: 20px; font-weight: 800; margin-bottom: 8px;
+  }
+  .flow .step .l { font-size: 22px; font-weight: 700; letter-spacing: -0.01em; line-height: 1.3; }
+  .flow .sep { display: flex; align-items: center; padding: 0 14px; color: var(--muted-2); font-size: 26px; }
+  .flow .s-blue   { border-color: rgba(91,141,239,0.4);  } .flow .s-blue   .n { color: var(--blue); }
+  .flow .s-purple { border-color: rgba(160,123,255,0.4); } .flow .s-purple .n { color: var(--purple); }
+  .flow .s-green  { border-color: rgba(70,197,139,0.4);  } .flow .s-green  .n { color: var(--green); }
+  .flow .s-pink   { border-color: rgba(240,107,155,0.4); } .flow .s-pink   .n { color: var(--pink); }
+
+  .panel {
+    border-radius: 16px;
+    background: var(--surface);
+    border: 1px solid var(--line);
+    padding: 36px 38px;
+  }
+  .panel .tag {
+    display: inline-block;
+    font-size: 17px; font-weight: 800; letter-spacing: 0.22em;
+    color: var(--accent); background: rgba(255,107,53,0.12);
+    padding: 7px 14px; border-radius: 7px; margin-bottom: 22px;
+  }
+  .panel h4 { font-size: 34px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 18px; }
+  .panel .rows { display: flex; flex-direction: column; gap: 16px; }
+  .panel .rows div {
+    font-size: 25px; line-height: 1.45; color: var(--muted); font-weight: 500;
+    padding-left: 34px; position: relative;
+  }
+  .panel .rows div::before {
+    content: "✓"; position: absolute; left: 0; top: 1px;
+    color: var(--accent); font-weight: 800; font-size: 22px;
+  }
+  .panel .rows div b { color: var(--text); font-weight: 700; }
+
+  /* ---- COVER (Card 1) ---- */
+  .cover { justify-content: center; }
+  .cover .at {
+    position: absolute;
+    font-size: 1000px;
+    font-weight: 800;
+    line-height: 1;
+    color: rgba(255, 255, 255, 0.028);
+    top: -150px;
+    right: -120px;
+    z-index: 1;
+    user-select: none;
+  }
+  .cover .glow {
+    position: absolute;
+    width: 720px; height: 720px;
+    border-radius: 50%;
+    background: radial-gradient(circle, rgba(255,107,53,0.22), transparent 60%);
+    top: 40px; left: -180px; z-index: 1; filter: blur(20px);
+  }
+  .cover .kicker {
+    display: inline-flex; align-items: center; gap: 14px;
+    font-size: 22px; font-weight: 700; letter-spacing: 0.30em;
+    color: var(--accent); text-transform: uppercase; margin-bottom: 36px;
+  }
+  .cover .kicker::before {
+    content: ""; width: 56px; height: 2px; background: var(--accent); display: block;
+  }
+  .cover .big {
+    font-weight: 800;
+    font-size: 104px;
+    line-height: 1.08;
+    letter-spacing: -0.035em;
+  }
+  .cover .big .or { color: var(--accent); }
+  .cover .big .tag-pill {
+    color: var(--accent);
+  }
+  .cover .sub {
+    margin-top: 40px;
+    font-size: 33px;
+    line-height: 1.55;
+    color: var(--muted);
+    font-weight: 500;
+    max-width: 760px;
+  }
+  .cover .sub b { color: var(--text); font-weight: 700; }
+  .cover .meta {
+    position: absolute;
+    bottom: 110px; left: 80px;
+    font-size: 22px; color: var(--muted-2); font-weight: 600; letter-spacing: 0.04em;
+    z-index: 2;
+  }
+
+  /* ---- CTA (Card 6) ---- */
+  .cta { align-items: center; text-align: center; justify-content: flex-start; padding-top: 110px; }
+  .cta .eyebrow { margin-bottom: 30px; }
+  .cta .cta-h { font-size: 64px; font-weight: 800; line-height: 1.18; letter-spacing: -0.02em; }
+  .cta .cta-h .or { color: var(--accent); }
+  .cta .cta-sub { margin-top: 26px; font-size: 28px; line-height: 1.6; color: var(--muted); font-weight: 500; }
+  .cta .cta-sub b { color: var(--text); font-weight: 700; }
+  .avatar {
+    width: 240px; height: 240px; border-radius: 50%;
+    margin: 64px auto 0;
+    background: radial-gradient(circle at 50% 35%, #2A2A33, #121216);
+    border: 3px solid var(--accent);
+    box-shadow: 0 0 0 10px rgba(255,107,53,0.10), 0 0 60px rgba(255,107,53,0.30);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 96px; font-weight: 800; color: var(--accent);
+  }
+  .follow {
+    margin: 52px auto 0;
+    display: inline-block;
+    background: var(--accent);
+    color: #1A0E06;
+    font-size: 30px; font-weight: 800; letter-spacing: -0.01em;
+    padding: 22px 70px; border-radius: 999px;
+  }
+  .promo {
+    margin: 64px auto 0;
+    width: 100%;
+    display: flex; align-items: center; gap: 26px;
+    background: var(--surface); border: 1px solid var(--line);
+    border-radius: 18px; padding: 26px 30px; text-align: left;
+  }
+  .promo .thumb {
+    flex: 0 0 auto; width: 150px; height: 110px; border-radius: 12px;
+    background: linear-gradient(135deg, #3A1206, #7A2A0C);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 19px; font-weight: 800; color: var(--accent-2); line-height: 1.25; text-align: center;
+  }
+  .promo .pin { flex: 1; }
+  .promo .badge {
+    display: inline-block; font-size: 17px; font-weight: 800;
+    color: #1A0E06; background: var(--accent); padding: 5px 12px; border-radius: 6px; margin-bottom: 12px;
+  }
+  .promo h5 { font-size: 28px; font-weight: 800; letter-spacing: -0.01em; margin-bottom: 8px; }
+  .promo p { font-size: 21px; color: var(--muted); font-weight: 500; }
+
+  @media (prefers-reduced-motion: reduce) {
+    * { animation: none !important; transition: none !important; }
+  }
+</style>
+</head>
+<body>
+
+  <!-- ============ CARD 1 · COVER ============ -->
+  <section class="card cover" aria-label="커버">
+    <div class="glow" aria-hidden="true"></div>
+    <div class="at" aria-hidden="true">@</div>
+    <span class="kicker">Introducing</span>
+    <h1 class="big">
+      Slack 팀원이 된<br />
+      <span class="or">Claude Tag</span>
+    </h1>
+    <p class="sub">
+      채널 · 도구 · 데이터에 접근하는<br />
+      하나의 <b>'AI 팀원'</b>이 대화에 합류합니다.
+    </p>
+    <div class="meta">2026.06.23 · ANTHROPIC</div>
+    <div class="dots" aria-hidden="true">
+      <i class="on"></i><i></i><i></i><i></i><i></i><i></i>
+    </div>
+  </section>
+
+  <!-- ============ CARD 2 · 개요 ============ -->
+  <section class="card" aria-label="개요">
+    <span class="pageno">02</span>
+    <span class="arrow left" aria-hidden="true">‹</span>
+    <span class="arrow right" aria-hidden="true">›</span>
+    <div class="body-head">
+      <div class="eyebrow">What is it</div>
+      <h2 class="headline">Claude Tag란?</h2>
+    </div>
+    <p class="lead">
+      Claude와 함께 일하는 <b>새로운 협업 방식</b>입니다.<br /><br />
+      처음에는 <span class="or">Slack</span>에서 출시되며, 선택한
+      <b>채널 · 도구 · 데이터 · 코드베이스</b>에 접근할 수 있는
+      하나의 <b>'팀원'</b>처럼 동작합니다.
+    </p>
+    <div class="banner">시간이 지날수록 학습하는 AI 팀원</div>
+    <div class="dots" aria-hidden="true">
+      <i></i><i class="on"></i><i></i><i></i><i></i><i></i>
+    </div>
+  </section>
+
+  <!-- ============ CARD 3 · 멀티플레이어 3대 기능 ============ -->
+  <section class="card" aria-label="핵심 기능">
+    <span class="pageno">03</span>
+    <span class="arrow left" aria-hidden="true">‹</span>
+    <span class="arrow right" aria-hidden="true">›</span>
+    <div class="body-head">
+      <div class="eyebrow">Key features</div>
+      <h2 class="headline"><span class="or">@Claude</span>는<br />멀티플레이어</h2>
+    </div>
+    <div class="feat-list">
+      <div class="feat c-blue">
+        <span class="num">01</span>
+        <div class="txt">
+          <h3>능동적인 지원</h3>
+          <p>주변 맥락을 인지해 <span class="hl">알아야 할 내용을 먼저</span> 알려줍니다.</p>
+        </div>
+      </div>
+      <div class="feat c-purple">
+        <span class="num">02</span>
+        <div class="txt">
+          <h3>비동기 작업</h3>
+          <p>맡겨두면 <span class="hl">혼자 처리</span>하고, 긴 기간에 걸쳐 스스로 일정도 잡습니다.</p>
+        </div>
+      </div>
+      <div class="feat c-pink">
+        <span class="num">03</span>
+        <div class="txt">
+          <h3>다이렉트 메시지</h3>
+          <p>개인용 도구를 사용해 <span class="hl">1:1로 직접</span> 답변합니다.</p>
+        </div>
+      </div>
+    </div>
+    <div class="banner">팀 대화에 끊김 없이 합류</div>
+    <div class="dots" aria-hidden="true">
+      <i></i><i></i><i class="on"></i><i></i><i></i><i></i>
+    </div>
+  </section>
+
+  <!-- ============ CARD 4 · 접근 권한 ============ -->
+  <section class="card" aria-label="접근 권한">
+    <span class="pageno">04</span>
+    <span class="arrow left" aria-hidden="true">‹</span>
+    <span class="arrow right" aria-hidden="true">›</span>
+    <div class="body-head">
+      <div class="eyebrow">Admin control</div>
+      <h2 class="headline">관리자가<br /><span class="or">모든 접근을 제어</span></h2>
+    </div>
+    <div class="flow">
+      <div class="step s-blue"><div class="n">01</div><div class="l">접근<br />제어</div></div>
+      <div class="sep">→</div>
+      <div class="step s-purple"><div class="n">02</div><div class="l">인스턴스<br />분리</div></div>
+      <div class="sep">→</div>
+      <div class="step s-green"><div class="n">03</div><div class="l">토큰<br />한도</div></div>
+      <div class="sep">→</div>
+      <div class="step s-pink"><div class="n">04</div><div class="l">활동<br />로그</div></div>
+    </div>
+    <div class="panel">
+      <span class="tag">CONTROL</span>
+      <h4>채널마다 권한을 다르게</h4>
+      <div class="rows">
+        <div>어떤 <b>채널</b>에서 어떤 <b>도구 · 정보</b>에 접근할지 직접 제어</div>
+        <div>기능별로 서로 다른 <b>Claude 인스턴스</b> 생성 가능</div>
+        <div><b>토큰 사용량 한도</b> 설정과 <b>활동 로그</b> 기록 포함</div>
+      </div>
+    </div>
+    <div class="dots" aria-hidden="true">
+      <i></i><i></i><i></i><i class="on"></i><i></i><i></i>
+    </div>
+  </section>
+
+  <!-- ============ CARD 5 · 제공 대상 & 마이그레이션 ============ -->
+  <section class="card" aria-label="제공 대상">
+    <span class="pageno">05</span>
+    <span class="arrow left" aria-hidden="true">‹</span>
+    <span class="arrow right" aria-hidden="true">›</span>
+    <div class="body-head">
+      <div class="eyebrow">Availability</div>
+      <h2 class="headline">Enterprise · Team<br /><span class="or">베타 제공</span></h2>
+    </div>
+    <div class="panel">
+      <span class="tag">ROLLOUT</span>
+      <h4>지금 도입하면</h4>
+      <div class="rows">
+        <div>기존 Slack용 Claude 앱에서 <b>30일 이내 이전</b> 가능</div>
+        <div>대상 조직에 <b>출시 기념 크레딧</b> 제공</div>
+        <div><b>Opus 4.8</b> 기반 · 참고 문서와 제품 페이지 함께 제공</div>
+      </div>
+    </div>
+    <div class="banner">가장 강력한 모델로 일하는 팀원</div>
+    <div class="dots" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i class="on"></i><i></i>
+    </div>
+  </section>
+
+  <!-- ============ CARD 6 · CTA ============ -->
+  <section class="card cta" aria-label="팔로우 안내">
+    <div class="glow" aria-hidden="true" style="top:120px;left:50%;transform:translateX(-50%);"></div>
+    <div class="eyebrow">Start now</div>
+    <h2 class="cta-h">AI 협업,<br /><span class="or">더 깊이 알고 싶다면</span></h2>
+    <p class="cta-sub">
+      저장하고 팔로우해두면<br />
+      <b>새로운 AI 활용법</b>을 가장 빠르게 받아볼 수 있어요.
+    </p>
+    <div class="avatar" aria-hidden="true">@</div>
+    <span class="follow">팔로우하기</span>
+    <div class="promo">
+      <div class="thumb">CLAUDE<br />MASTER</div>
+      <div class="pin">
+        <span class="badge">신규 콘텐츠</span>
+        <h5>클로드 완벽 마스터</h5>
+        <p>실무에서 바로 쓰는 AI 협업 가이드</p>
+      </div>
+    </div>
+    <div class="dots" aria-hidden="true">
+      <i></i><i></i><i></i><i></i><i></i><i class="on"></i>
+    </div>
+  </section>
+
+</body>
+</html>
