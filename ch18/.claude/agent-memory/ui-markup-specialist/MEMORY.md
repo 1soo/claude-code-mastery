@@ -1,0 +1,1 @@
+- [견적서 앱 스타일 컨텍스트](project_quote_app.md) — 무채색 neutral 테마, Badge 의미 매핑, Card hover 패턴, 필터 빈 상태 처리

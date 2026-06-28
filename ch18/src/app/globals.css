@@ -1,0 +1,282 @@
+@import "tailwindcss";
+@import "tw-animate-css";
+@import "shadcn/tailwind.css";
+
+@custom-variant dark (&:is(.dark *));
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-geist-mono);
+  --font-heading: var(--font-sans);
+  --color-sidebar-ring: var(--sidebar-ring);
+  --color-sidebar-border: var(--sidebar-border);
+  --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
+  --color-sidebar-accent: var(--sidebar-accent);
+  --color-sidebar-primary-foreground: var(--sidebar-primary-foreground);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-foreground: var(--sidebar-foreground);
+  --color-sidebar: var(--sidebar);
+  --color-chart-5: var(--chart-5);
+  --color-chart-4: var(--chart-4);
+  --color-chart-3: var(--chart-3);
+  --color-chart-2: var(--chart-2);
+  --color-chart-1: var(--chart-1);
+  --color-ring: var(--ring);
+  --color-input: var(--input);
+  --color-border: var(--border);
+  --color-destructive: var(--destructive);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-accent: var(--accent);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-muted: var(--muted);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-secondary: var(--secondary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-primary: var(--primary);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-popover: var(--popover);
+  --color-card-foreground: var(--card-foreground);
+  --color-card: var(--card);
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-md: calc(var(--radius) * 0.8);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) * 1.4);
+  --radius-2xl: calc(var(--radius) * 1.8);
+  --radius-3xl: calc(var(--radius) * 2.2);
+  --radius-4xl: calc(var(--radius) * 2.6);
+}
+
+:root {
+  --background: oklch(1 0 0);
+  --foreground: oklch(0.145 0 0);
+  --card: oklch(1 0 0);
+  --card-foreground: oklch(0.145 0 0);
+  --popover: oklch(1 0 0);
+  --popover-foreground: oklch(0.145 0 0);
+  --primary: oklch(0.205 0 0);
+  --primary-foreground: oklch(0.985 0 0);
+  --secondary: oklch(0.97 0 0);
+  --secondary-foreground: oklch(0.205 0 0);
+  --muted: oklch(0.97 0 0);
+  --muted-foreground: oklch(0.556 0 0);
+  --accent: oklch(0.205 0 0);
+  --accent-foreground: oklch(0.985 0 0);
+  --destructive: oklch(0.577 0.245 27.325);
+  --border: oklch(0.922 0 0);
+  --input: oklch(0.922 0 0);
+  --ring: oklch(0.708 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --radius: 0.625rem;
+  --sidebar: oklch(0.985 0 0);
+  --sidebar-foreground: oklch(0.145 0 0);
+  --sidebar-primary: oklch(0.205 0 0);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.97 0 0);
+  --sidebar-accent-foreground: oklch(0.205 0 0);
+  --sidebar-border: oklch(0.922 0 0);
+  --sidebar-ring: oklch(0.708 0 0);
+}
+
+.dark {
+  --background: oklch(0.145 0 0);
+  --foreground: oklch(0.985 0 0);
+  --card: oklch(0.205 0 0);
+  --card-foreground: oklch(0.985 0 0);
+  --popover: oklch(0.205 0 0);
+  --popover-foreground: oklch(0.985 0 0);
+  --primary: oklch(0.922 0 0);
+  --primary-foreground: oklch(0.205 0 0);
+  --secondary: oklch(0.269 0 0);
+  --secondary-foreground: oklch(0.985 0 0);
+  --muted: oklch(0.269 0 0);
+  --muted-foreground: oklch(0.708 0 0);
+  --accent: oklch(0.922 0 0);
+  --accent-foreground: oklch(0.205 0 0);
+  --destructive: oklch(0.704 0.191 22.216);
+  --border: oklch(1 0 0 / 10%);
+  --input: oklch(1 0 0 / 15%);
+  --ring: oklch(0.556 0 0);
+  --chart-1: oklch(0.87 0 0);
+  --chart-2: oklch(0.556 0 0);
+  --chart-3: oklch(0.439 0 0);
+  --chart-4: oklch(0.371 0 0);
+  --chart-5: oklch(0.269 0 0);
+  --sidebar: oklch(0.205 0 0);
+  --sidebar-foreground: oklch(0.985 0 0);
+  --sidebar-primary: oklch(0.488 0.243 264.376);
+  --sidebar-primary-foreground: oklch(0.985 0 0);
+  --sidebar-accent: oklch(0.269 0 0);
+  --sidebar-accent-foreground: oklch(0.985 0 0);
+  --sidebar-border: oklch(1 0 0 / 10%);
+  --sidebar-ring: oklch(0.556 0 0);
+}
+
+@layer base {
+  * {
+    @apply border-border outline-ring/50;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+  html {
+    @apply font-sans;
+  }
+}
+
+/* ── PDF 인쇄(F003): react-to-print + @media print ── */
+/* 인쇄 페이지 규격: A4 세로, 상 15mm / 좌우하 12mm */
+@page {
+  size: A4 portrait;
+  margin: 15mm 12mm 12mm 12mm;
+}
+
+@media print {
+  /* ── 인쇄 스코프 라이트 토큰 강제 (F010 다크모드 마감) ── */
+  /* 다크모드(.dark)가 켜진 상태로 인쇄해도 모든 테마 토큰을 라이트 값으로
+     해석시켜, 카드/배지/구분선 등 var(--*)를 쓰는 내부 요소가 어두운 배경으로
+     찍히지 않게 한다. :root 라이트 정의를 그대로 가져오되, 인쇄 가독성을 위해
+     muted-foreground만 약간 더 진하게(0.45) 둔다. 이 블록을 @media print 최상단에
+     두어 이후의 #fff/[data-print-area] 규칙과 상호 보완되게 한다. */
+  :root,
+  .dark {
+    --background: oklch(1 0 0);
+    --foreground: oklch(0.145 0 0);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.145 0 0);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.145 0 0);
+    --primary: oklch(0.205 0 0);
+    --primary-foreground: oklch(0.985 0 0);
+    --secondary: oklch(0.97 0 0);
+    --secondary-foreground: oklch(0.205 0 0);
+    --muted: oklch(0.97 0 0);
+    --muted-foreground: oklch(0.45 0 0);
+    --accent: oklch(0.97 0 0);
+    --accent-foreground: oklch(0.205 0 0);
+    --destructive: oklch(0.577 0.245 27.325);
+    --border: oklch(0.85 0 0);
+    --input: oklch(0.922 0 0);
+    --ring: oklch(0.708 0 0);
+  }
+
+  /* ── 화면 전용 요소 일괄 숨김 ── */
+  /* Tailwind print:hidden 클래스 및 데이터 속성으로 명시된 비인쇄 요소 */
+  .print\:hidden {
+    display: none !important;
+  }
+
+  /* ── 문서 기반 ── */
+  /* 흰 배경 고정 (다크 모드 테마 무관하게 종이처럼) */
+  html,
+  body {
+    background: #fff !important;
+    color: #000 !important;
+    /* 인쇄용 기본 폰트 크기: 10pt (한글 가독성 기준) */
+    font-size: 10pt !important;
+    /* 고아 줄/창 줄 최소 2줄 보장 */
+    orphans: 2;
+    widows: 2;
+  }
+
+  /* ── 인쇄 컨테이너 장식 제거 ── */
+  /* 화면용 그림자·외곽선·테두리·라운드는 종이에 불필요 */
+  [data-print-area] {
+    box-shadow: none !important;
+    border: 0 !important;
+    outline: none !important;
+    /* ring(box-shadow 계열)도 제거 */
+    --tw-ring-shadow: 0 0 #0000 !important;
+    /* 내부 패딩 제거: @page margin 이 여백 역할을 대신함 */
+    padding: 0 !important;
+    /* 라운드 모서리는 종이에 어색 */
+    border-radius: 0 !important;
+    /* 전체 너비 활용 */
+    width: 100% !important;
+    /* 인쇄 시 배경 흰색으로 강제 (카드 배경 제거) */
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  /* ── 페이지 분할 제어 ── */
+  /* 섹션·헤더: 블록 단위로 잘림 방지 */
+  [data-print-area] section,
+  [data-print-area] header {
+    break-inside: avoid;
+  }
+
+  /* 테이블 헤더 그룹: 항상 다음 페이지에서 반복·잘림 방지 */
+  [data-print-area] thead {
+    display: table-header-group;
+    break-inside: avoid;
+  }
+
+  /* 테이블 바닥글(소계): 잘림 방지 */
+  [data-print-area] tfoot {
+    break-inside: avoid;
+  }
+
+  /* 개별 행: 행 중간에서 페이지 전환 방지 */
+  [data-print-area] tr {
+    break-inside: avoid;
+  }
+
+  /* ── 테이블 구조 강화 ── */
+  /* 인쇄 시 테이블 구분선을 명확하게 유지 (화면 스타일 보완) */
+  [data-print-area] table {
+    border-collapse: collapse;
+    width: 100%;
+    /* 테이블은 항목이 많을 수 있으므로 페이지 전환 허용 */
+    break-inside: auto;
+  }
+
+  /* 셀 폰트 크기 인쇄 최적화 (10pt 기준 명시적 유지) */
+  [data-print-area] th,
+  [data-print-area] td {
+    font-size: 9.5pt;
+  }
+
+  /* ── 제목 크기 인쇄 최적화 ── */
+  /* 화면용 4xl(36px) 제목은 종이에서 너무 커 24pt로 조정 */
+  [data-print-area] h1 {
+    font-size: 22pt !important;
+  }
+
+  /* 섹션 소제목: 화면과 동일 비율 유지 */
+  [data-print-area] h2 {
+    font-size: 7.5pt;
+  }
+
+  /* ── 색상 보존: 배지·합계 배경 등 그대로 인쇄 ── */
+  /* 브라우저 기본 동작은 배경색 생략 — exact 로 강제 출력 */
+  [data-print-area] * {
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+
+  /* ── 합계 영역 너비 인쇄 최적화 ── */
+  /* 화면에서 sm:min-w-80 이지만 인쇄 시 전체 너비 활용 */
+  [data-print-area] .print-total-box {
+    width: 100% !important;
+    min-width: 0 !important;
+  }
+
+  /* ── 구분선(Separator) 인쇄 보존 ── */
+  /* 화면용 Separator 가 인쇄에서도 시각적 섹션 구분을 제공 */
+  [data-print-area] [data-orientation="horizontal"],
+  [data-print-area] hr {
+    border-color: #d1d5db !important;
+    break-after: avoid;
+  }
+
+  /* ── 헤더 뒤 페이지 전환 방지 ── */
+  /* 문서 헤더 직후 페이지가 넘어가지 않도록 */
+  [data-print-area] header {
+    break-after: avoid;
+  }
+}

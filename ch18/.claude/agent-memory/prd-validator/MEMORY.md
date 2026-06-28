@@ -1,0 +1,2 @@
+- [Quote App PRD Validation](project_quote_app_validation.md) — docs/PRD.md (견적서 공유 앱) 기술 검증 결과·치명 이슈 요약 (2026-06-23)
+- [Notion API 2025-09-03 Data Source 전환](reference_notion_data_source_migration.md) — 신규 프로젝트는 databases.query 금지, dataSources.query + SDK v5 사용
